@@ -168,7 +168,7 @@
     margin:8px 0 4px;
   }
   .tarot-card{
-    width:96px; height:150px;
+    width:150px; height:250px;
     border-radius:10px;
     background:
       radial-gradient(ellipse at 50% 30%, rgba(198,161,91,0.25), transparent 65%),
@@ -177,7 +177,7 @@
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 8px 24px rgba(0,0,0,0.45);
     cursor:pointer;
-    transition:transform 0.25s ease;
+    transition:transform 0.4s ease;
     position:relative;
     overflow:hidden;
   }
@@ -188,14 +188,23 @@
     font-size:1.6rem;
   }
   .tarot-card.revealed{
-    background:linear-gradient(160deg, #201a2e, var(--ink));
+    background:var(--ink);
     border-color:var(--gold);
+    cursor:default;
+    animation:flip 0.5s ease;
+  }
+  @keyframes flip{
+    0%{ transform:rotateY(90deg); }
+    100%{ transform:rotateY(0deg); }
   }
   .tarot-card.revealed::before{ display:none; }
+  .tarot-card img{
+    width:100%; height:100%; object-fit:cover; border-radius:9px;
+  }
   .card-name{
     font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; font-style:italic;
-    text-align:center; font-size:0.95rem; color:var(--parchment);
-    padding:0 10px;
+    text-align:center; font-size:0.95rem; color:var(--gold);
+    padding:0 10px; margin-top:2px;
   }
   .draw-btn{
     font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-weight:600; font-size:0.82rem;
@@ -280,10 +289,28 @@
 
 <script>
 const CARDS = [
-  "El Loco","El Mago","La Sacerdotisa","La Emperatriz","El Emperador",
-  "El Hierofante","Los Enamorados","El Carro","La Fuerza","El Ermitaño",
-  "La Rueda de la Fortuna","La Justicia","El Colgado","La Muerte","La Templanza",
-  "El Diablo","La Torre","La Estrella","La Luna","El Sol","El Juicio","El Mundo"
+  { name: "El Loco", file: "00-el-loco.jpg" },
+  { name: "El Mago", file: "01-el-mago.jpg" },
+  { name: "La Sacerdotisa", file: "02-la-sacerdotisa.jpg" },
+  { name: "La Emperatriz", file: "03-la-emperatriz.jpg" },
+  { name: "El Emperador", file: "04-el-emperador.jpg" },
+  { name: "El Hierofante", file: "05-el-hierofante.jpg" },
+  { name: "Los Enamorados", file: "06-los-enamorados.jpg" },
+  { name: "El Carro", file: "07-el-carro.jpg" },
+  { name: "La Fuerza", file: "08-la-fuerza.jpg" },
+  { name: "El Ermitaño", file: "09-el-ermitano.jpg" },
+  { name: "La Rueda de la Fortuna", file: "10-la-rueda-de-la-fortuna.jpg" },
+  { name: "La Justicia", file: "11-la-justicia.jpg" },
+  { name: "El Colgado", file: "12-el-colgado.jpg" },
+  { name: "La Muerte", file: "13-la-muerte.jpg" },
+  { name: "La Templanza", file: "14-la-templanza.jpg" },
+  { name: "El Diablo", file: "15-el-diablo.jpg" },
+  { name: "La Torre", file: "16-la-torre.jpg" },
+  { name: "La Estrella", file: "17-la-estrella.jpg" },
+  { name: "La Luna", file: "18-la-luna.jpg" },
+  { name: "El Sol", file: "19-el-sol.jpg" },
+  { name: "El Juicio", file: "20-el-juicio.jpg" },
+  { name: "El Mundo", file: "21-el-mundo.jpg" }
 ];
 
 let chat, input, sendBtn, autoVoiceToggle;
@@ -365,11 +392,17 @@ function addCardDraw(){
     const card = CARDS[Math.floor(Math.random() * CARDS.length)];
     const el = document.getElementById('tarotCard');
     el.classList.add('revealed');
-    el.innerHTML = `<span class="card-name">${card}</span>`;
+    el.innerHTML = `<img src="/cards/${card.file}" alt="${card.name}">`;
     document.getElementById('drawBtn').remove();
+
+    const label = document.createElement('div');
+    label.className = 'card-name';
+    label.textContent = card.name;
+    wrap.appendChild(label);
+
     cardDrawn = true;
     setTimeout(() => {
-      sendUserTurn(`Saqué la carta: ${card}.`, `Saqué: ${card}`);
+      sendUserTurn(`Saqué la carta: ${card.name}.`, `Saqué: ${card.name}`);
     }, 500);
   });
 }
