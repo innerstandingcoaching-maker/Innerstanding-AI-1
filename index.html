@@ -230,8 +230,19 @@
     background:var(--ink-2);
     border:1px solid var(--line);
     border-radius:18px;
-    padding:8px 8px 8px 16px;
+    padding:8px 8px 8px 10px;
   }
+  .card-btn{
+    width:40px; height:40px; border-radius:50%; flex-shrink:0;
+    background:transparent; border:1px solid var(--gold-dim);
+    color:var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all 0.2s ease;
+  }
+  .card-btn svg{ width:18px; height:18px; }
+  .card-btn:hover{ background:rgba(198,161,91,0.12); border-color:var(--gold); }
+  .card-btn:disabled{ opacity:0.3; cursor:default; }
+  #cardsCounter.limit-note{ color:var(--gold-dim); }
   textarea{
     flex:1;
     background:transparent; border:none; outline:none;
@@ -279,12 +290,19 @@
 
 <div class="input-bar">
   <div class="input-wrap">
+    <button class="card-btn" id="cardBtn" aria-label="Sacar carta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="3" width="14" height="18" rx="2"></rect>
+        <circle cx="12" cy="9" r="2.4"></circle>
+        <path d="M8 17 L12 13 L16 17"></path>
+      </svg>
+    </button>
     <textarea id="input" placeholder="Cuéntame qué te está dando vueltas..." rows="1"></textarea>
     <button class="send-btn" id="sendBtn" aria-label="Enviar">
       <svg viewBox="0 0 24 24" fill="none" stroke="#12121a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
     </button>
   </div>
-  <p class="disclaimer">Innerstanding es un espacio de introspección, no un sustituto de terapia o coaching profesional.</p>
+  <p class="disclaimer" id="cardsCounter">Innerstanding es un espacio de introspección, no un sustituto de terapia o coaching profesional.</p>
 </div>
 
 <script>
@@ -313,9 +331,10 @@ const CARDS = [
   { name: "El Mundo", file: "21-el-mundo.jpg" }
 ];
 
-let chat, input, sendBtn, autoVoiceToggle;
+let chat, input, sendBtn, autoVoiceToggle, cardBtn, cardsCounter;
 let history = [];
-let cardDrawn = false;
+let cardsDrawnCount = 0;
+const MAX_CARDS = 3;
 let spanishVoice = null;
 
 function pickSpanishVoice(){
@@ -382,29 +401,48 @@ function addCardDraw(){
   const wrap = document.createElement('div');
   wrap.className = 'card-draw';
   wrap.innerHTML = `
-    <div class="tarot-card" id="tarotCard"></div>
-    <button class="draw-btn" id="drawBtn">Sacar una carta</button>
+    <div class="tarot-card" id="tarotCard-${cardsDrawnCount}"></div>
+    <button class="draw-btn" id="drawBtn-${cardsDrawnCount}">Sacar una carta</button>
   `;
   chat.appendChild(wrap);
   chat.scrollTop = chat.scrollHeight;
 
-  document.getElementById('drawBtn').addEventListener('click', () => {
+  const drawBtnId = 'drawBtn-' + cardsDrawnCount;
+  const tarotCardId = 'tarotCard-' + cardsDrawnCount;
+
+  document.getElementById(drawBtnId).addEventListener('click', () => {
     const card = CARDS[Math.floor(Math.random() * CARDS.length)];
-    const el = document.getElementById('tarotCard');
+    const el = document.getElementById(tarotCardId);
     el.classList.add('revealed');
     el.innerHTML = `<img src="/cards/${card.file}" alt="${card.name}">`;
-    document.getElementById('drawBtn').remove();
+    document.getElementById(drawBtnId).remove();
 
     const label = document.createElement('div');
     label.className = 'card-name';
     label.textContent = card.name;
     wrap.appendChild(label);
 
-    cardDrawn = true;
+    cardsDrawnCount++;
+    updateCardButton();
+
     setTimeout(() => {
       sendUserTurn(`Saqué la carta: ${card.name}.`, `Saqué: ${card.name}`);
     }, 500);
   });
+}
+
+function updateCardButton(){
+  const remaining = MAX_CARDS - cardsDrawnCount;
+  if (remaining <= 0){
+    cardBtn.disabled = true;
+    cardBtn.setAttribute('aria-label', 'Ya usaste tus 3 cartas');
+    cardsCounter.textContent = 'Ya usaste tus 3 cartas para esta sesión. Puedes seguir conversando con lo que ya salió.';
+    cardsCounter.classList.add('limit-note');
+  } else {
+    cardBtn.disabled = false;
+    cardsCounter.textContent = 'Innerstanding es un espacio de introspección, no un sustituto de terapia o coaching profesional.';
+    cardsCounter.classList.remove('limit-note');
+  }
 }
 
 function showTyping(){
@@ -518,9 +556,15 @@ function init(){
     input = document.getElementById('input');
     sendBtn = document.getElementById('sendBtn');
     autoVoiceToggle = document.getElementById('autoVoice');
+    cardBtn = document.getElementById('cardBtn');
+    cardsCounter = document.getElementById('cardsCounter');
     chat.innerHTML = '';
 
     sendBtn.addEventListener('click', handleSend);
+    cardBtn.addEventListener('click', () => {
+      if (cardsDrawnCount >= MAX_CARDS) return;
+      addCardDraw();
+    });
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();
