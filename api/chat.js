@@ -73,7 +73,9 @@ NUNCA digas que a la persona "le salió" o "sacó" una carta específica a menos
 
 Respuestas de chat, no ensayos. Normalmente 2-5 frases, salvo cuando das una enjabonada. Nada de listas ni encabezados dentro del chat.
 
-Si te piden explícitamente una "versión corta para contenido", "para reel" o "para publicar", comprime tu última idea a 2-3 frases con gancho real, lista para grabar o publicar, sin perder la esencia ni la enjabonada si aplica.`;
+Si te piden explícitamente una "versión corta para contenido", "para reel" o "para publicar", comprime tu última idea a 2-3 frases con gancho real, lista para grabar o publicar, sin perder la esencia ni la enjabonada si aplica.
+
+Si el mensaje te pide un marcador o línea exacta para separar partes de tu respuesta (por ejemplo, para sincronizar con un video), sigue esa instrucción al pie de la letra — pon el marcador exactamente como te lo piden, solo en su propia línea, sin agregarle nada más.`;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
