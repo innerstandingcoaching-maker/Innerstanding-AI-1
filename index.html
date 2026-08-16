@@ -306,6 +306,75 @@
 
   ::-webkit-scrollbar{ width:6px; }
   ::-webkit-scrollbar-thumb{ background:var(--gold-dim); border-radius:10px; }
+
+  .video-mode-btn{
+    margin-top:10px;
+    font-family:inherit; font-weight:600; font-size:0.85rem;
+    background:transparent; color:var(--gold);
+    border:1px solid var(--gold-dim);
+    padding:8px 16px; border-radius:100px;
+    cursor:pointer; transition:all 0.2s ease;
+  }
+  .video-mode-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
+
+  .video-overlay{
+    position:fixed; inset:0; z-index:999;
+    background:#000;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .video-close-btn{
+    position:absolute; top:20px; right:20px; z-index:2;
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+    color:#fff; font-size:1rem;
+    cursor:pointer;
+  }
+  .video-stage{
+    position:relative;
+    width:100%; max-width:420px; aspect-ratio:9/16;
+    border-radius:14px; overflow:hidden;
+    background:#000;
+  }
+  .video-card-img{
+    position:absolute; inset:0;
+    width:100%; height:100%; object-fit:cover;
+    animation:kenburns 14s ease-in-out infinite alternate;
+  }
+  @keyframes kenburns{
+    0%{ transform:scale(1) translate(0,0); }
+    100%{ transform:scale(1.18) translate(-2%, -2%); }
+  }
+  .video-gradient{
+    position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 25%, transparent 55%, rgba(0,0,0,0.85) 100%);
+  }
+  .video-brand{
+    position:absolute; top:18px; left:0; right:0;
+    text-align:center;
+    color:var(--gold);
+    font-size:0.72rem; letter-spacing:0.2em; font-weight:700;
+  }
+  .video-caption{
+    position:absolute; left:20px; right:20px; bottom:36px;
+    color:#fff;
+    font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    font-size:1.35rem; line-height:1.4; font-style:italic;
+    text-shadow:0 2px 12px rgba(0,0,0,0.8);
+    opacity:0;
+  }
+  .video-caption.caption-in{
+    animation:captionIn 0.4s ease forwards;
+  }
+  @keyframes captionIn{
+    from{ opacity:0; transform:translateY(10px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .video-hint{
+    margin-top:16px; color:var(--parchment-dim);
+    font-size:0.8rem; text-align:center; max-width:340px;
+  }
+  #videoPlayBtn{ margin-top:14px; }
 </style>
 </head>
 <body>
@@ -399,21 +468,115 @@ if ('speechSynthesis' in window){
   window.speechSynthesis.onvoiceschanged = pickSpanishVoice;
 }
 
+function closeVideoMode(){
+  window.speechSynthesis.cancel();
+  const overlay = document.getElementById('videoModeOverlay');
+  if (overlay) overlay.remove();
+}
+
+function openVideoMode(card, text){
+  window.speechSynthesis.cancel();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'videoModeOverlay';
+  overlay.className = 'video-overlay';
+  overlay.innerHTML = `
+    <button class="video-close-btn" id="videoCloseBtn" aria-label="Cerrar">✕</button>
+    <div class="video-stage">
+      <img src="/cards/${card.file}" alt="${card.name}" class="video-card-img">
+      <div class="video-gradient"></div>
+      <div class="video-brand">INNERSTANDING</div>
+      <div class="video-caption" id="videoCaption"></div>
+    </div>
+    <p class="video-hint">Activa "Grabar pantalla" en tu iPhone y luego dale a reproducir 🔴</p>
+    <button class="draw-btn" id="videoPlayBtn">▶ Reproducir</button>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById('videoCloseBtn').addEventListener('click', closeVideoMode);
+
+  const captionEl = document.getElementById('videoCaption');
+  const playBtn = document.getElementById('videoPlayBtn');
+
+  const cleanText = stripEmojis(text);
+  const sentences = splitIntoSentences(cleanText);
+
+  playBtn.addEventListener('click', () => {
+    playBtn.remove();
+    window.speechSynthesis.cancel();
+
+    sentences.forEach((sentence) => {
+      const utter = new SpeechSynthesisUtterance(sentence);
+      if (spanishVoice) utter.voice = spanishVoice;
+      utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
+
+      const isQuestion = /\?$/.test(sentence);
+      const isExclamation = /!$/.test(sentence);
+      if (isExclamation){ utter.rate = 1.0; utter.pitch = 1.15; }
+      else if (isQuestion){ utter.rate = 0.95; utter.pitch = 1.12; }
+      else { utter.rate = 0.94; utter.pitch = 1.0; }
+
+      utter.onstart = () => {
+        captionEl.classList.remove('caption-in');
+        void captionEl.offsetWidth;
+        captionEl.textContent = sentence;
+        captionEl.classList.add('caption-in');
+      };
+
+      window.speechSynthesis.speak(utter);
+    });
+  });
+}
+
+function stripEmojis(text){
+  return text
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+function splitIntoSentences(text){
+  const matches = text.match(/[^.!?¡¿]*[.!?]+["'»]?|\S+$/g);
+  return matches ? matches.map(s => s.trim()).filter(Boolean) : [text];
+}
+
 function speak(text, btn){
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   document.querySelectorAll('.speak-btn.speaking').forEach(b => b.classList.remove('speaking'));
-  const utter = new SpeechSynthesisUtterance(text);
-  if (spanishVoice) utter.voice = spanishVoice;
-  utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
-  utter.rate = 0.94;
-  utter.pitch = 1.02;
-  if (btn){
-    btn.classList.add('speaking');
-    utter.onend = () => btn.classList.remove('speaking');
-    utter.onerror = () => btn.classList.remove('speaking');
-  }
-  window.speechSynthesis.speak(utter);
+
+  const cleanText = stripEmojis(text);
+  const sentences = splitIntoSentences(cleanText);
+  if (!sentences.length) return;
+
+  if (btn) btn.classList.add('speaking');
+
+  sentences.forEach((sentence, i) => {
+    const utter = new SpeechSynthesisUtterance(sentence);
+    if (spanishVoice) utter.voice = spanishVoice;
+    utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
+
+    const isQuestion = /\?$/.test(sentence);
+    const isExclamation = /!$/.test(sentence);
+
+    if (isExclamation){
+      utter.rate = 1.0;
+      utter.pitch = 1.15;
+    } else if (isQuestion){
+      utter.rate = 0.95;
+      utter.pitch = 1.12;
+    } else {
+      utter.rate = 0.94;
+      utter.pitch = 1.0;
+    }
+
+    if (btn && i === sentences.length - 1){
+      utter.onend = () => btn.classList.remove('speaking');
+      utter.onerror = () => btn.classList.remove('speaking');
+    }
+
+    window.speechSynthesis.speak(utter);
+  });
 }
 
 function escapeHtml(str){
@@ -434,7 +597,7 @@ function renderMessageBody(text){
   });
 }
 
-function addMessage(role, text, forceSpeak){
+function addMessage(role, text, forceSpeak, videoCard){
   const wrap = document.createElement('div');
   wrap.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
   const label = document.createElement('span');
@@ -449,7 +612,13 @@ function addMessage(role, text, forceSpeak){
   }
   wrap.appendChild(body);
 
-  if (role === 'ai' && 'speechSynthesis' in window){
+  if (role === 'ai' && videoCard){
+    const videoBtn = document.createElement('button');
+    videoBtn.className = 'video-mode-btn';
+    videoBtn.innerHTML = '🎥 Ver como video';
+    videoBtn.addEventListener('click', () => openVideoMode(videoCard, text));
+    wrap.appendChild(videoBtn);
+  } else if (role === 'ai' && 'speechSynthesis' in window){
     const btn = document.createElement('button');
     btn.className = 'speak-btn';
     btn.setAttribute('aria-label', 'Escuchar');
@@ -606,7 +775,7 @@ function addRetryPrompt(){
   });
 }
 
-async function callClaude(userText, forceSpeak){
+async function callClaude(userText, forceSpeak, videoCard){
   if (userText !== null){
     history.push({ role: 'user', content: userText });
   }
@@ -617,7 +786,7 @@ async function callClaude(userText, forceSpeak){
     const reply = await requestClaudeWithRetry(3);
     hideTyping();
     history.push({ role: 'assistant', content: reply });
-    addMessage('ai', reply, forceSpeak);
+    addMessage('ai', reply, forceSpeak, videoCard);
   }catch(err){
     hideTyping();
     addRetryPrompt();
@@ -648,7 +817,7 @@ function runContentMode(){
   const card = revealRandomCardInline();
   const prompt = `Modo contenido: saqué "${card.name}" para publicar hoy como carta del día. Dame directo la versión corta para contenido — 2-3 frases con gancho real, lista para copiar y pegar en redes, sin preguntarme nada antes ni pedirme contexto.`;
   history.push({ role: 'user', content: prompt });
-  callClaude(null, true);
+  callClaude(null, false, card);
 }
 
 const ZODIAC_SIGNS = {
@@ -672,7 +841,7 @@ function runZodiacMode(sign, userText){
   const card = revealRandomCardInline();
   const prompt = `Modo contenido / horóscopo hablado: me preguntaron por el signo ${sign}. Saqué la carta: ${card.name}. Empieza reconociendo el signo y diciendo, en tus propias palabras, algo como "veamos qué carta le sale a ${sign} hoy" — y de inmediato interpreta esa carta conectada con la energía típica de ${sign} en este momento. Tono hablado, cálido, con gancho, 3-5 frases, listo para grabar en audio.`;
   history.push({ role: 'user', content: prompt });
-  callClaude(null, true);
+  callClaude(null, false, card);
 }
 
 function handleSend(){
