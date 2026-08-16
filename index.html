@@ -379,9 +379,19 @@ function pickSpanishVoice(){
   if (!('speechSynthesis' in window)) return;
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return;
+
+  const isSpanish = v => /^es/i.test(v.lang);
+  const isLatam = v => /es-VE|es-419|es-MX|es-US|es-CO|es-AR/i.test(v.lang);
+  const isEnhanced = v => /enhanced|premium|neural|natural/i.test(v.name);
+  // Nombres de voces de calidad "Enhanced" conocidas en iOS/macOS en español
+  const knownGoodNames = /mónica|monica|paulina|juan carlos|jorge|angelica|angélica/i;
+
   spanishVoice =
-    voices.find(v => /es-VE|es-419|es-MX|es-US/i.test(v.lang)) ||
-    voices.find(v => /^es/i.test(v.lang)) ||
+    voices.find(v => isSpanish(v) && isLatam(v) && isEnhanced(v)) ||
+    voices.find(v => isSpanish(v) && isEnhanced(v)) ||
+    voices.find(v => isSpanish(v) && knownGoodNames.test(v.name)) ||
+    voices.find(v => isSpanish(v) && isLatam(v)) ||
+    voices.find(v => isSpanish(v)) ||
     null;
 }
 if ('speechSynthesis' in window){
@@ -396,8 +406,8 @@ function speak(text, btn){
   const utter = new SpeechSynthesisUtterance(text);
   if (spanishVoice) utter.voice = spanishVoice;
   utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
-  utter.rate = 0.98;
-  utter.pitch = 1.0;
+  utter.rate = 0.94;
+  utter.pitch = 1.02;
   if (btn){
     btn.classList.add('speaking');
     utter.onend = () => btn.classList.remove('speaking');
