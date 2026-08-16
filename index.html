@@ -340,6 +340,7 @@
     position:absolute; inset:0;
     width:100%; height:100%; object-fit:cover;
     animation:kenburns 14s ease-in-out infinite alternate;
+    transition:opacity 0.3s ease;
   }
   @keyframes kenburns{
     0%{ transform:scale(1) translate(0,0); }
@@ -355,6 +356,13 @@
     color:var(--gold);
     font-size:0.72rem; letter-spacing:0.2em; font-weight:700;
   }
+  .video-card-name{
+    position:absolute; top:40px; left:0; right:0;
+    text-align:center;
+    color:rgba(255,255,255,0.85);
+    font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    font-style:italic; font-size:0.85rem;
+  }
   .video-caption{
     position:absolute; left:20px; right:20px; bottom:36px;
     color:#fff;
@@ -369,10 +377,6 @@
   @keyframes captionIn{
     from{ opacity:0; transform:translateY(10px); }
     to{ opacity:1; transform:translateY(0); }
-  }
-  .video-hint{
-    margin-top:16px; color:var(--parchment-dim);
-    font-size:0.8rem; text-align:center; max-width:340px;
   }
   #videoPlayBtn{ margin-top:14px; }
 </style>
@@ -439,6 +443,30 @@ const CARDS = [
 ];
 
 let chat, input, sendBtn, autoVoiceToggle, cardBtn, cardsCounter, contentModeBtn;
+
+// Candado del modo contenido — cambia esta clave por la que quieras.
+// Ojo: esto es un candado del lado del navegador, no seguridad real.
+// Cualquier persona con conocimientos técnicos podría verla en el código fuente.
+const CONTENT_PASSPHRASE = 'innerstanding2026';
+const CONTENT_UNLOCK_KEY = 'innerstanding_content_unlocked';
+
+function isContentUnlocked(){
+  try{ return localStorage.getItem(CONTENT_UNLOCK_KEY) === 'yes'; }
+  catch(e){ return false; }
+}
+
+function tryUnlockContent(){
+  if (isContentUnlocked()) return true;
+  const pass = window.prompt('Esta función es privada. Ingresa la clave:');
+  if (pass && pass.trim() === CONTENT_PASSPHRASE){
+    try{ localStorage.setItem(CONTENT_UNLOCK_KEY, 'yes'); }catch(e){}
+    return true;
+  }
+  if (pass !== null){
+    window.alert('Clave incorrecta.');
+  }
+  return false;
+}
 let history = [];
 let cardsDrawnCount = 0;
 const MAX_CARDS = 3;
@@ -474,8 +502,9 @@ function closeVideoMode(){
   if (overlay) overlay.remove();
 }
 
-function openVideoMode(card, text){
+function openVideoMode(cardOrCards, text){
   window.speechSynthesis.cancel();
+  const cards = Array.isArray(cardOrCards) ? cardOrCards : [cardOrCards];
 
   const overlay = document.createElement('div');
   overlay.id = 'videoModeOverlay';
@@ -483,12 +512,12 @@ function openVideoMode(card, text){
   overlay.innerHTML = `
     <button class="video-close-btn" id="videoCloseBtn" aria-label="Cerrar">✕</button>
     <div class="video-stage">
-      <img src="/cards/${card.file}" alt="${card.name}" class="video-card-img">
+      <img src="/cards/${cards[0].file}" alt="${cards[0].name}" class="video-card-img" id="videoCardImg">
       <div class="video-gradient"></div>
       <div class="video-brand">INNERSTANDING</div>
+      <div class="video-card-name" id="videoCardNameLabel">${cards[0].name}</div>
       <div class="video-caption" id="videoCaption"></div>
     </div>
-    <p class="video-hint">Activa "Grabar pantalla" en tu iPhone y luego dale a reproducir 🔴</p>
     <button class="draw-btn" id="videoPlayBtn">▶ Reproducir</button>
   `;
   document.body.appendChild(overlay);
@@ -496,16 +525,20 @@ function openVideoMode(card, text){
   document.getElementById('videoCloseBtn').addEventListener('click', closeVideoMode);
 
   const captionEl = document.getElementById('videoCaption');
+  const imgEl = document.getElementById('videoCardImg');
+  const cardNameEl = document.getElementById('videoCardNameLabel');
   const playBtn = document.getElementById('videoPlayBtn');
 
-  const cleanText = stripEmojis(text);
+  const cleanText = stripForSpeech(text);
   const sentences = splitIntoSentences(cleanText);
+  const sentencesPerCard = Math.max(1, Math.ceil(sentences.length / cards.length));
+  let currentCardIndex = -1;
 
   playBtn.addEventListener('click', () => {
     playBtn.remove();
     window.speechSynthesis.cancel();
 
-    sentences.forEach((sentence) => {
+    sentences.forEach((sentence, i) => {
       const utter = new SpeechSynthesisUtterance(sentence);
       if (spanishVoice) utter.voice = spanishVoice;
       utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
@@ -519,6 +552,18 @@ function openVideoMode(card, text){
         void captionEl.offsetWidth;
         captionEl.textContent = sentence;
         captionEl.classList.add('caption-in');
+
+        const cardIndex = Math.min(cards.length - 1, Math.floor(i / sentencesPerCard));
+        if (cardIndex !== currentCardIndex){
+          currentCardIndex = cardIndex;
+          imgEl.style.opacity = '0';
+          setTimeout(() => {
+            imgEl.src = `/cards/${cards[cardIndex].file}`;
+            imgEl.alt = cards[cardIndex].name;
+            cardNameEl.textContent = cards[cardIndex].name;
+            imgEl.style.opacity = '1';
+          }, 300);
+        }
       };
 
       window.speechSynthesis.speak(utter);
@@ -542,9 +587,29 @@ function stripEmojis(text){
     .trim();
 }
 
+function stripForSpeech(text){
+  let t = text;
+  t = t.replace(/(https?:\/\/[^\s]+)/g, '');
+  t = t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '');
+  t = t.replace(/[*_#`~>→←↑↓]/g, '');
+  t = t.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+  t = t.replace(/[ \t]{2,}/g, ' ');
+  return t.trim();
+}
+
 function splitIntoSentences(text){
-  const matches = text.match(/[^.!?¡¿]*[.!?]+["'»]?|\S+$/g);
-  return matches ? matches.map(s => s.trim()).filter(Boolean) : [text];
+  const sentences = [];
+  const regex = /[^.!?]*[.!?]+/g;
+  let lastIndex = 0;
+  let m;
+  while ((m = regex.exec(text)) !== null){
+    const chunk = m[0].trim();
+    if (chunk) sentences.push(chunk);
+    lastIndex = regex.lastIndex;
+  }
+  const remainder = text.slice(lastIndex).trim();
+  if (remainder) sentences.push(remainder);
+  return sentences.length ? sentences : [text];
 }
 
 function speak(text, btn){
@@ -552,7 +617,7 @@ function speak(text, btn){
   window.speechSynthesis.cancel();
   document.querySelectorAll('.speak-btn.speaking').forEach(b => b.classList.remove('speaking'));
 
-  const cleanText = stripEmojis(text);
+  const cleanText = stripForSpeech(text);
   const sentences = splitIntoSentences(cleanText);
   if (!sentences.length) return;
 
@@ -811,6 +876,7 @@ function revealRandomCardInline(){
 }
 
 function runContentMode(){
+  if (!tryUnlockContent()) return;
   const card = revealRandomCardInline();
   const prompt = `Modo contenido: saqué "${card.name}" para publicar hoy como carta del día. Dame directo la versión corta para contenido — 2-3 frases con gancho real, lista para copiar y pegar en redes, sin preguntarme nada antes ni pedirme contexto.`;
   history.push({ role: 'user', content: prompt });
@@ -834,11 +900,16 @@ function detectZodiacSign(text){
 }
 
 function runZodiacMode(sign, userText){
+  if (!tryUnlockContent()){
+    sendUserTurn(userText);
+    return;
+  }
   addMessage('user', userText);
-  const card = revealRandomCardInline();
-  const prompt = `Modo contenido / horóscopo hablado: me preguntaron por el signo ${sign}. Saqué la carta: ${card.name}. Empieza reconociendo el signo y diciendo, en tus propias palabras, algo como "veamos qué carta le sale a ${sign} hoy" — y de inmediato interpreta esa carta conectada con la energía típica de ${sign} en este momento. Tono hablado, cálido, con gancho, 3-5 frases, listo para grabar en audio.`;
+  const cards = [revealRandomCardInline(), revealRandomCardInline(), revealRandomCardInline()];
+  const cardList = cards.map((c, i) => `${i + 1}) ${c.name}`).join(', ');
+  const prompt = `Modo contenido / horóscopo hablado — lectura de 3 cartas para ${sign}, pensada para un video de al menos un minuto. Saqué estas 3 cartas en orden: ${cardList}. Empieza reconociendo el signo, algo como "vamos a ver qué le dicen las cartas a ${sign} hoy" — y luego interpreta las 3 cartas en orden, conectando cada una con una parte distinta del momento de ${sign} (por ejemplo: la primera con lo que está viviendo ahorita, la segunda con el reto o bloqueo, la tercera con el consejo o hacia dónde va). Tono hablado, cálido, con gancho, entre 8 y 12 frases en total para que dure alrededor de un minuto leído en voz alta. Que se sienta como una lectura completa y conectada, no tres mini-lecturas sueltas.`;
   history.push({ role: 'user', content: prompt });
-  callClaude(null, false, card);
+  callClaude(null, false, cards);
 }
 
 function handleSend(){
