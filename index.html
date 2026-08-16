@@ -78,6 +78,27 @@
     cursor:pointer; user-select:none;
   }
   .voice-toggle input{ accent-color: var(--gold); width:15px; height:15px; cursor:pointer; }
+  .content-mode-btn{
+    margin-top:12px; z-index:1;
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:0.78rem; font-weight:600;
+    background:transparent; color:var(--gold);
+    border:1px solid var(--gold-dim);
+    padding:8px 16px; border-radius:100px;
+    cursor:pointer; transition:all 0.2s ease;
+  }
+  .content-mode-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
+  .content-mode-btn:disabled{ opacity:0.4; cursor:default; }
+  .copy-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:50%;
+    background:transparent; border:1px solid var(--gold-dim);
+    color:var(--gold); font-size:0.8rem;
+    cursor:pointer; margin-top:8px; margin-left:6px;
+    transition:all 0.2s ease;
+  }
+  .copy-btn:hover{ background:rgba(198,161,91,0.12); border-color:var(--gold); }
+  .copy-btn.copied{ background:var(--gold); color:var(--ink); }
   .speak-btn{
     display:inline-flex; align-items:center; justify-content:center;
     width:26px; height:26px; border-radius:50%;
@@ -298,6 +319,7 @@
     <input type="checkbox" id="autoVoice">
     <span>🔊 Voz automática</span>
   </label>
+  <button class="content-mode-btn" id="contentModeBtn">🎬 Modo contenido: sacar carta para publicar</button>
 </header>
 
 <main id="chat">
@@ -347,7 +369,7 @@ const CARDS = [
   { name: "El Mundo", file: "21-el-mundo.jpg" }
 ];
 
-let chat, input, sendBtn, autoVoiceToggle, cardBtn, cardsCounter;
+let chat, input, sendBtn, autoVoiceToggle, cardBtn, cardsCounter, contentModeBtn;
 let history = [];
 let cardsDrawnCount = 0;
 const MAX_CARDS = 3;
@@ -402,7 +424,7 @@ function renderMessageBody(text){
   });
 }
 
-function addMessage(role, text){
+function addMessage(role, text, forceSpeak){
   const wrap = document.createElement('div');
   wrap.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
   const label = document.createElement('span');
@@ -425,9 +447,28 @@ function addMessage(role, text){
     btn.addEventListener('click', () => speak(text, btn));
     wrap.appendChild(btn);
 
-    if (autoVoiceToggle && autoVoiceToggle.checked){
+    if (forceSpeak || (autoVoiceToggle && autoVoiceToggle.checked)){
       speak(text, btn);
     }
+  }
+
+  if (role === 'ai'){
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.setAttribute('aria-label', 'Copiar texto');
+    copyBtn.textContent = '📋';
+    copyBtn.addEventListener('click', async () => {
+      try{
+        await navigator.clipboard.writeText(text);
+        copyBtn.classList.add('copied');
+        copyBtn.textContent = '✓';
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.textContent = '📋';
+        }, 1500);
+      }catch(e){ console.error('No se pudo copiar', e); }
+    });
+    wrap.appendChild(copyBtn);
   }
 
   chat.appendChild(wrap);
@@ -555,7 +596,7 @@ function addRetryPrompt(){
   });
 }
 
-async function callClaude(userText){
+async function callClaude(userText, forceSpeak){
   if (userText !== null){
     history.push({ role: 'user', content: userText });
   }
@@ -566,7 +607,7 @@ async function callClaude(userText){
     const reply = await requestClaudeWithRetry(3);
     hideTyping();
     history.push({ role: 'assistant', content: reply });
-    addMessage('ai', reply);
+    addMessage('ai', reply, forceSpeak);
   }catch(err){
     hideTyping();
     addRetryPrompt();
@@ -580,12 +621,62 @@ function sendUserTurn(fullText, displayText){
   callClaude(fullText);
 }
 
+function revealRandomCardInline(){
+  const card = CARDS[Math.floor(Math.random() * CARDS.length)];
+  const wrap = document.createElement('div');
+  wrap.className = 'card-draw';
+  wrap.innerHTML = `
+    <div class="tarot-card revealed"><img src="/cards/${card.file}" alt="${card.name}"></div>
+    <div class="card-name">${card.name}</div>
+  `;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  return card;
+}
+
+function runContentMode(){
+  const card = revealRandomCardInline();
+  const prompt = `Modo contenido: saqué "${card.name}" para publicar hoy como carta del día. Dame directo la versión corta para contenido — 2-3 frases con gancho real, lista para copiar y pegar en redes, sin preguntarme nada antes ni pedirme contexto.`;
+  history.push({ role: 'user', content: prompt });
+  callClaude(null, true);
+}
+
+const ZODIAC_SIGNS = {
+  'aries':'Aries','tauro':'Tauro','géminis':'Géminis','geminis':'Géminis',
+  'cáncer':'Cáncer','cancer':'Cáncer','leo':'Leo','virgo':'Virgo','libra':'Libra',
+  'escorpio':'Escorpio','sagitario':'Sagitario','capricornio':'Capricornio',
+  'acuario':'Acuario','piscis':'Piscis'
+};
+
+function detectZodiacSign(text){
+  const lower = text.toLowerCase();
+  for (const key in ZODIAC_SIGNS){
+    const regex = new RegExp('\\b' + key + '\\b', 'i');
+    if (regex.test(lower)) return ZODIAC_SIGNS[key];
+  }
+  return null;
+}
+
+function runZodiacMode(sign, userText){
+  addMessage('user', userText);
+  const card = revealRandomCardInline();
+  const prompt = `Modo contenido / horóscopo hablado: me preguntaron por el signo ${sign}. Saqué la carta: ${card.name}. Empieza reconociendo el signo y diciendo, en tus propias palabras, algo como "veamos qué carta le sale a ${sign} hoy" — y de inmediato interpreta esa carta conectada con la energía típica de ${sign} en este momento. Tono hablado, cálido, con gancho, 3-5 frases, listo para grabar en audio.`;
+  history.push({ role: 'user', content: prompt });
+  callClaude(null, true);
+}
+
 function handleSend(){
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
   input.style.height = 'auto';
-  sendUserTurn(text);
+
+  const sign = detectZodiacSign(text);
+  if (sign){
+    runZodiacMode(sign, text);
+  } else {
+    sendUserTurn(text);
+  }
 }
 
 function init(){
@@ -596,6 +687,7 @@ function init(){
     autoVoiceToggle = document.getElementById('autoVoice');
     cardBtn = document.getElementById('cardBtn');
     cardsCounter = document.getElementById('cardsCounter');
+    contentModeBtn = document.getElementById('contentModeBtn');
     chat.innerHTML = '';
 
     sendBtn.addEventListener('click', handleSend);
@@ -603,6 +695,7 @@ function init(){
       if (cardsDrawnCount >= MAX_CARDS) return;
       addCardDraw();
     });
+    contentModeBtn.addEventListener('click', runContentMode);
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();
