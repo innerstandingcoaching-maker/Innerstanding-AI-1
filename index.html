@@ -538,6 +538,8 @@ function openVideoMode(cardOrCards, text){
     playBtn.remove();
     window.speechSynthesis.cancel();
 
+    let cumulativeMs = 0;
+
     sentences.forEach((sentence, i) => {
       const utter = new SpeechSynthesisUtterance(sentence);
       if (spanishVoice) utter.voice = spanishVoice;
@@ -547,13 +549,19 @@ function openVideoMode(cardOrCards, text){
       utter.rate = vp.rate;
       utter.pitch = vp.pitch;
 
-      utter.onstart = () => {
+      window.speechSynthesis.speak(utter);
+
+      const cardIndex = Math.min(cards.length - 1, Math.floor(i / sentencesPerCard));
+      const words = sentence.trim().split(/\s+/).filter(Boolean).length || 1;
+      const wordsPerMinute = 150 * vp.rate;
+      const durationMs = (words / wordsPerMinute) * 60000 + 250;
+
+      setTimeout(() => {
         captionEl.classList.remove('caption-in');
         void captionEl.offsetWidth;
         captionEl.textContent = sentence;
         captionEl.classList.add('caption-in');
 
-        const cardIndex = Math.min(cards.length - 1, Math.floor(i / sentencesPerCard));
         if (cardIndex !== currentCardIndex){
           currentCardIndex = cardIndex;
           imgEl.style.opacity = '0';
@@ -562,11 +570,11 @@ function openVideoMode(cardOrCards, text){
             imgEl.alt = cards[cardIndex].name;
             cardNameEl.textContent = cards[cardIndex].name;
             imgEl.style.opacity = '1';
-          }, 300);
+          }, 250);
         }
-      };
+      }, cumulativeMs);
 
-      window.speechSynthesis.speak(utter);
+      cumulativeMs += durationMs;
     });
   });
 }
