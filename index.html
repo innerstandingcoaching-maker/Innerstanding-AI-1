@@ -510,11 +510,9 @@ function openVideoMode(card, text){
       if (spanishVoice) utter.voice = spanishVoice;
       utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
 
-      const isQuestion = /\?$/.test(sentence);
-      const isExclamation = /!$/.test(sentence);
-      if (isExclamation){ utter.rate = 1.0; utter.pitch = 1.15; }
-      else if (isQuestion){ utter.rate = 0.95; utter.pitch = 1.12; }
-      else { utter.rate = 0.94; utter.pitch = 1.0; }
+      const vp = getVoiceParams(sentence);
+      utter.rate = vp.rate;
+      utter.pitch = vp.pitch;
 
       utter.onstart = () => {
         captionEl.classList.remove('caption-in');
@@ -526,6 +524,15 @@ function openVideoMode(card, text){
       window.speechSynthesis.speak(utter);
     });
   });
+}
+
+function getVoiceParams(sentence){
+  const isQuestion = /\?$/.test(sentence);
+  const isExclamation = /!$/.test(sentence);
+  const wiggle = (Math.random() * 0.08) - 0.04; // variación sutil para que no suene plano
+  if (isExclamation) return { rate: 1.06, pitch: 1.24 + wiggle };
+  if (isQuestion) return { rate: 0.99, pitch: 1.17 + wiggle };
+  return { rate: 0.99, pitch: 1.08 + wiggle };
 }
 
 function stripEmojis(text){
@@ -556,19 +563,9 @@ function speak(text, btn){
     if (spanishVoice) utter.voice = spanishVoice;
     utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
 
-    const isQuestion = /\?$/.test(sentence);
-    const isExclamation = /!$/.test(sentence);
-
-    if (isExclamation){
-      utter.rate = 1.0;
-      utter.pitch = 1.15;
-    } else if (isQuestion){
-      utter.rate = 0.95;
-      utter.pitch = 1.12;
-    } else {
-      utter.rate = 0.94;
-      utter.pitch = 1.0;
-    }
+    const vp = getVoiceParams(sentence);
+    utter.rate = vp.rate;
+    utter.pitch = vp.pitch;
 
     if (btn && i === sentences.length - 1){
       utter.onend = () => btn.classList.remove('speaking');
