@@ -501,13 +501,13 @@ if ('speechSynthesis' in window){
 }
 
 function closeVideoMode(){
-  window.speechSynthesis.cancel();
+  stopAllAudio();
   const overlay = document.getElementById('videoModeOverlay');
   if (overlay) overlay.remove();
 }
 
 function openVideoMode(cardOrCards, text){
-  window.speechSynthesis.cancel();
+  stopAllAudio();
   const cards = Array.isArray(cardOrCards) ? cardOrCards : [cardOrCards];
 
   const overlay = document.createElement('div');
@@ -569,58 +569,99 @@ function openVideoMode(cardOrCards, text){
     return chunks.length ? chunks : [sentence];
   }
 
-  playBtn.addEventListener('click', () => {
-    playBtn.remove();
-    window.speechSynthesis.cancel();
-
+  // Construye la línea de tiempo (qué texto mostrar y cuándo, y cuándo cambiar
+  // de carta) usando una duración ESTIMADA por cantidad de palabras.
+  function buildTimeline(rate){
+    const timeline = [];
     let cumulativeMs = 0;
-
     sentences.forEach((sentence, i) => {
-      const utter = new SpeechSynthesisUtterance(sentence);
-      if (spanishVoice) utter.voice = spanishVoice;
-      utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
-
-      const vp = getVoiceParams(sentence);
-      utter.rate = vp.rate;
-      utter.pitch = vp.pitch;
-
-      window.speechSynthesis.speak(utter);
-
       const cardIndex = sentenceCardIndex[i];
       const totalWords = sentence.trim().split(/\s+/).filter(Boolean).length || 1;
-      const wordsPerMinute = 150 * vp.rate;
+      const wordsPerMinute = 185 * rate;
       const sentenceDurationMs = (totalWords / wordsPerMinute) * 60000 + 250;
-
-      const chunks = chunkWords(sentence, 5);
+      const chunks = chunkWords(sentence, 10);
       let chunkOffsetMs = 0;
 
       chunks.forEach((chunk, ci) => {
         const chunkWordCount = chunk.trim().split(/\s+/).filter(Boolean).length;
         const chunkDurationMs = sentenceDurationMs * (chunkWordCount / totalWords);
-        const scheduledAt = cumulativeMs + chunkOffsetMs;
-
-        setTimeout(() => {
-          captionEl.classList.remove('caption-in');
-          void captionEl.offsetWidth;
-          captionEl.textContent = chunk;
-          captionEl.classList.add('caption-in');
-
-          if (ci === 0 && cardIndex !== currentCardIndex){
-            currentCardIndex = cardIndex;
-            imgEl.style.opacity = '0';
-            setTimeout(() => {
-              imgEl.src = `/cards/${cards[cardIndex].file}`;
-              imgEl.alt = cards[cardIndex].name;
-              cardNameEl.textContent = cards[cardIndex].name;
-              imgEl.style.opacity = '1';
-            }, 250);
-          }
-        }, scheduledAt);
-
+        timeline.push({
+          at: cumulativeMs + chunkOffsetMs,
+          chunk,
+          isFirstOfSentence: ci === 0,
+          cardIndex
+        });
         chunkOffsetMs += chunkDurationMs;
       });
 
       cumulativeMs += sentenceDurationMs;
+    });
+    return { timeline, totalMs: cumulativeMs };
+  }
+
+  function scheduleTimeline(timeline, scale){
+    timeline.forEach(item => {
+      setTimeout(() => {
+        captionEl.classList.remove('caption-in');
+        void captionEl.offsetWidth;
+        captionEl.textContent = item.chunk;
+        captionEl.classList.add('caption-in');
+
+        if (item.isFirstOfSentence && item.cardIndex !== currentCardIndex){
+          currentCardIndex = item.cardIndex;
+          imgEl.style.opacity = '0';
+          setTimeout(() => {
+            imgEl.src = `/cards/${cards[item.cardIndex].file}`;
+            imgEl.alt = cards[item.cardIndex].name;
+            cardNameEl.textContent = cards[item.cardIndex].name;
+            imgEl.style.opacity = '1';
+          }, 250);
+        }
+      }, item.at * scale);
+    });
+  }
+
+  function playWithBrowserVoice(){
+    sentences.forEach((sentence) => {
+      const utter = new SpeechSynthesisUtterance(sentence);
+      if (spanishVoice) utter.voice = spanishVoice;
+      utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
+      const vp = getVoiceParams(sentence);
+      utter.rate = vp.rate;
+      utter.pitch = vp.pitch;
+      window.speechSynthesis.speak(utter);
+    });
+    const { timeline } = buildTimeline(0.99);
+    scheduleTimeline(timeline, 1);
+  }
+
+  async function playWithClonedVoice(){
+    const { timeline, totalMs } = buildTimeline(1.0);
+    const fullText = sentences.join(' ');
+
+    const url = await synthesizeSpeech(fullText);
+    const audio = new Audio(url);
+    currentAudioEl = audio;
+
+    await new Promise((resolve, reject) => {
+      audio.addEventListener('loadedmetadata', resolve, { once: true });
+      audio.addEventListener('error', reject, { once: true });
+    });
+
+    const realMs = (audio.duration && isFinite(audio.duration)) ? audio.duration * 1000 : totalMs;
+    const scale = totalMs > 0 ? (realMs / totalMs) : 1;
+
+    scheduleTimeline(timeline, scale);
+    await audio.play();
+  }
+
+  playBtn.addEventListener('click', () => {
+    playBtn.remove();
+    stopAllAudio();
+
+    playWithClonedVoice().catch(err => {
+      console.error('Voz clonada no disponible en el video, usando voz del navegador:', err);
+      playWithBrowserVoice();
     });
   });
 }
@@ -667,7 +708,32 @@ function splitIntoSentences(text){
   return sentences.length ? sentences : [text];
 }
 
-function speak(text, btn){
+let currentAudioEl = null;
+
+function stopAllAudio(){
+  if (currentAudioEl){
+    try{ currentAudioEl.pause(); }catch(e){}
+    currentAudioEl = null;
+  }
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+async function synthesizeSpeech(text){
+  const response = await fetch('/api/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text })
+  });
+  if (!response.ok){
+    let msg = 'Error de voz';
+    try{ const j = await response.json(); msg = j.error || msg; }catch(e){}
+    throw new Error(msg);
+  }
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
+
+function speakBrowserFallback(text, btn){
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   document.querySelectorAll('.speak-btn.speaking').forEach(b => b.classList.remove('speaking'));
@@ -694,6 +760,35 @@ function speak(text, btn){
 
     window.speechSynthesis.speak(utter);
   });
+}
+
+async function speak(text, btn){
+  stopAllAudio();
+  document.querySelectorAll('.speak-btn.speaking').forEach(b => b.classList.remove('speaking'));
+
+  const cleanText = stripForSpeech(text);
+  if (!cleanText) return;
+
+  if (btn) btn.classList.add('speaking');
+
+  try{
+    const url = await synthesizeSpeech(cleanText);
+    const audio = new Audio(url);
+    currentAudioEl = audio;
+    audio.onended = () => {
+      if (btn) btn.classList.remove('speaking');
+      URL.revokeObjectURL(url);
+      if (currentAudioEl === audio) currentAudioEl = null;
+    };
+    audio.onerror = () => {
+      if (btn) btn.classList.remove('speaking');
+      if (currentAudioEl === audio) currentAudioEl = null;
+    };
+    await audio.play();
+  }catch(err){
+    console.error('Voz clonada no disponible, usando voz del navegador:', err);
+    speakBrowserFallback(text, btn);
+  }
 }
 
 function escapeHtml(str){
