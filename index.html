@@ -412,7 +412,7 @@
     <input type="checkbox" id="autoVoice">
     <span>🔊 Voz automática</span>
   </label>
-  <button class="content-mode-btn" id="contentModeBtn">🎬 Modo contenido: sacar carta para publicar</button>
+  <button class="content-mode-btn" id="contentModeBtn" style="display:none;">🎬 Modo contenido: sacar carta para publicar</button>
 </header>
 
 <main id="chat">
@@ -477,17 +477,25 @@ function isContentUnlocked(){
   catch(e){ return false; }
 }
 
+// Se desbloquea SOLO entrando con tu link privado (?admin=clave) — nunca con un
+// popup visible al público. Si no está desbloqueada, simplemente no hace nada,
+// sin avisarle a nadie que existe una función oculta.
+function checkAdminUnlockFromUrl(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const adminParam = params.get('admin');
+    if (adminParam && adminParam === CONTENT_PASSPHRASE){
+      localStorage.setItem(CONTENT_UNLOCK_KEY, 'yes');
+      params.delete('admin');
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }catch(e){}
+}
+
 function tryUnlockContent(){
-  if (isContentUnlocked()) return true;
-  const pass = window.prompt('Esta función es privada. Ingresa la clave:');
-  if (pass && pass.trim() === CONTENT_PASSPHRASE){
-    try{ localStorage.setItem(CONTENT_UNLOCK_KEY, 'yes'); }catch(e){}
-    return true;
-  }
-  if (pass !== null){
-    window.alert('Clave incorrecta.');
-  }
-  return false;
+  return isContentUnlocked();
 }
 let history = [];
 let cardsDrawnCount = 0;
@@ -1225,6 +1233,11 @@ function init(){
     cardsCounter = document.getElementById('cardsCounter');
     contentModeBtn = document.getElementById('contentModeBtn');
     chat.innerHTML = '';
+
+    checkAdminUnlockFromUrl();
+    if (isContentUnlocked()){
+      contentModeBtn.style.display = '';
+    }
 
     sendBtn.addEventListener('click', handleSend);
     cardBtn.addEventListener('click', () => {
