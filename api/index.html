@@ -78,6 +78,27 @@
     cursor:pointer; user-select:none;
   }
   .voice-toggle input{ accent-color: var(--gold); width:15px; height:15px; cursor:pointer; }
+  .content-mode-btn{
+    margin-top:12px; z-index:1;
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:0.78rem; font-weight:600;
+    background:transparent; color:var(--gold);
+    border:1px solid var(--gold-dim);
+    padding:8px 16px; border-radius:100px;
+    cursor:pointer; transition:all 0.2s ease;
+  }
+  .content-mode-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
+  .content-mode-btn:disabled{ opacity:0.4; cursor:default; }
+  .copy-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:50%;
+    background:transparent; border:1px solid var(--gold-dim);
+    color:var(--gold); font-size:0.8rem;
+    cursor:pointer; margin-top:8px; margin-left:6px;
+    transition:all 0.2s ease;
+  }
+  .copy-btn:hover{ background:rgba(198,161,91,0.12); border-color:var(--gold); }
+  .copy-btn.copied{ background:var(--gold); color:var(--ink); }
   .speak-btn{
     display:inline-flex; align-items:center; justify-content:center;
     width:26px; height:26px; border-radius:50%;
@@ -128,6 +149,22 @@
     color:var(--parchment);
   }
   .msg.ai b, .msg.ai strong{ color:var(--gold); }
+  .chat-link{
+    color:var(--gold);
+    text-decoration:underline;
+    word-break:break-word;
+  }
+  .chat-link-cta{
+    display:inline-block;
+    margin-top:10px;
+    padding:10px 18px;
+    background:var(--gold);
+    color:var(--ink);
+    font-weight:700;
+    text-decoration:none;
+    border-radius:100px;
+    font-size:0.9rem;
+  }
 
   .msg-label{
     font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; font-style:italic;
@@ -218,6 +255,24 @@
   .draw-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
   .draw-btn:disabled{ opacity:0.35; cursor:default; }
 
+  .paywall-options{
+    display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;
+  }
+  .paywall-btn{
+    flex:1; min-width:130px;
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-weight:700; font-size:0.85rem;
+    background:transparent; color:var(--gold);
+    border:1px solid var(--gold-dim);
+    padding:12px 14px; border-radius:14px;
+    cursor:pointer; transition:all 0.2s ease;
+  }
+  .paywall-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
+  .paywall-btn-main{
+    background:var(--gold); color:var(--ink); border-color:var(--gold);
+  }
+  .paywall-btn-main:hover{ opacity:0.9; background:var(--gold); }
+
   /* ---------- Input bar ---------- */
   .input-bar{
     position:fixed; bottom:0; left:0; right:0;
@@ -269,6 +324,81 @@
 
   ::-webkit-scrollbar{ width:6px; }
   ::-webkit-scrollbar-thumb{ background:var(--gold-dim); border-radius:10px; }
+
+  .video-mode-btn{
+    margin-top:10px;
+    font-family:inherit; font-weight:600; font-size:0.85rem;
+    background:transparent; color:var(--gold);
+    border:1px solid var(--gold-dim);
+    padding:8px 16px; border-radius:100px;
+    cursor:pointer; transition:all 0.2s ease;
+  }
+  .video-mode-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
+
+  .video-overlay{
+    position:fixed; inset:0; z-index:999;
+    background:#000;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .video-close-btn{
+    position:absolute; top:20px; right:20px; z-index:2;
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+    color:#fff; font-size:1rem;
+    cursor:pointer;
+  }
+  .video-stage{
+    position:relative;
+    width:100%; max-width:420px; aspect-ratio:9/16;
+    border-radius:14px; overflow:hidden;
+    background:#000;
+  }
+  .video-card-img{
+    position:absolute; inset:0;
+    width:100%; height:100%; object-fit:cover;
+    animation:kenburns 14s ease-in-out infinite alternate;
+    transition:opacity 0.3s ease;
+  }
+  @keyframes kenburns{
+    0%{ transform:scale(1) translate(0,0); }
+    100%{ transform:scale(1.18) translate(-2%, -2%); }
+  }
+  .video-gradient{
+    position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 25%, transparent 55%, rgba(0,0,0,0.85) 100%);
+  }
+  .video-brand{
+    position:absolute; top:18px; left:0; right:0;
+    text-align:center;
+    color:var(--gold);
+    font-size:0.72rem; letter-spacing:0.2em; font-weight:700;
+  }
+  .video-card-name{
+    position:absolute; top:40px; left:0; right:0;
+    text-align:center;
+    color:rgba(255,255,255,0.85);
+    font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    font-style:italic; font-size:0.85rem;
+  }
+  .video-caption{
+    position:absolute; left:24px; right:24px; top:62%;
+    transform:translateY(-50%);
+    color:#fff;
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:1.5rem; font-weight:700; line-height:1.3;
+    text-align:center;
+    text-shadow:0 2px 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.6);
+    opacity:0;
+  }
+  .video-caption.caption-in{
+    animation:captionIn 0.25s ease forwards;
+  }
+  @keyframes captionIn{
+    from{ opacity:0; transform:translateY(-50%) scale(0.94); }
+    to{ opacity:1; transform:translateY(-50%) scale(1); }
+  }
+  #videoPlayBtn{ margin-top:14px; }
 </style>
 </head>
 <body>
@@ -282,6 +412,7 @@
     <input type="checkbox" id="autoVoice">
     <span>🔊 Voz automática</span>
   </label>
+  <button class="content-mode-btn" id="contentModeBtn">🎬 Modo contenido: sacar carta para publicar</button>
 </header>
 
 <main id="chat">
@@ -331,19 +462,163 @@ const CARDS = [
   { name: "El Mundo", file: "21-el-mundo.jpg" }
 ];
 
-let chat, input, sendBtn, autoVoiceToggle, cardBtn, cardsCounter;
+let chat, input, sendBtn, autoVoiceToggle, cardBtn, cardsCounter, contentModeBtn;
+
+const CARD_SEGMENT_MARKER = '@@CARTA@@';
+
+// Candado del modo contenido — cambia esta clave por la que quieras.
+// Ojo: esto es un candado del lado del navegador, no seguridad real.
+// Cualquier persona con conocimientos técnicos podría verla en el código fuente.
+const CONTENT_PASSPHRASE = 'innerstanding2026';
+const CONTENT_UNLOCK_KEY = 'innerstanding_content_unlocked';
+
+function isContentUnlocked(){
+  try{ return localStorage.getItem(CONTENT_UNLOCK_KEY) === 'yes'; }
+  catch(e){ return false; }
+}
+
+function tryUnlockContent(){
+  if (isContentUnlocked()) return true;
+  const pass = window.prompt('Esta función es privada. Ingresa la clave:');
+  if (pass && pass.trim() === CONTENT_PASSPHRASE){
+    try{ localStorage.setItem(CONTENT_UNLOCK_KEY, 'yes'); }catch(e){}
+    return true;
+  }
+  if (pass !== null){
+    window.alert('Clave incorrecta.');
+  }
+  return false;
+}
 let history = [];
 let cardsDrawnCount = 0;
-const MAX_CARDS = 3;
 let spanishVoice = null;
+
+// ---------- Acceso: admin (tú) vs. público vs. pagado ----------
+const DEVICE_ID_KEY = 'innerstanding_device_id';
+const PAID_ACCESS_KEY = 'innerstanding_paid_until';
+const FREE_CARDS_FOR_PUBLIC = 1;
+
+function getDeviceId(){
+  try{
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id){
+      id = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  }catch(e){
+    return 'dev_temp_' + Date.now();
+  }
+}
+
+function hasPaidAccessCached(){
+  try{
+    const until = parseInt(localStorage.getItem(PAID_ACCESS_KEY) || '0', 10);
+    return until > Date.now();
+  }catch(e){ return false; }
+}
+
+function savePaidAccessCache(untilTimestamp){
+  try{ localStorage.setItem(PAID_ACCESS_KEY, String(untilTimestamp)); }catch(e){}
+}
+
+function getMaxCards(){
+  if (isContentUnlocked()) return Infinity; // tú, con la clave
+  if (hasPaidAccessCached()) return Infinity; // alguien que ya pagó
+  return FREE_CARDS_FOR_PUBLIC; // público general
+}
+
+async function checkAccessOnLoad(){
+  const deviceId = getDeviceId();
+
+  // Si venimos de vuelta de Stripe con un session_id, confirmamos el pago primero.
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+  if (sessionId){
+    try{
+      const resp = await fetch('/api/verify-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+      const data = await resp.json();
+      if (data.active && data.until){
+        savePaidAccessCache(data.until);
+      }
+    }catch(e){ console.error('No se pudo verificar el pago', e); }
+    // Limpiar el session_id de la URL para que no quede pegado
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
+  // Revisamos también contra la base de datos, por si pagó desde otro dispositivo/navegador
+  try{
+    const resp = await fetch('/api/check-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId })
+    });
+    const data = await resp.json();
+    if (data.active && data.until){
+      savePaidAccessCache(data.until);
+    }
+  }catch(e){ console.error('No se pudo revisar el acceso', e); }
+
+  if (cardBtn) updateCardButton();
+}
+
+async function startCheckout(plan){
+  const deviceId = getDeviceId();
+  try{
+    const resp = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId, plan })
+    });
+    const data = await resp.json();
+    if (data.url){
+      window.location.href = data.url;
+    } else {
+      window.alert(data.error || 'No se pudo iniciar el pago. Intenta de nuevo.');
+    }
+  }catch(e){
+    window.alert('No se pudo conectar con el pago. Revisa tu conexión.');
+  }
+}
+
+function showPaywall(){
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ai';
+  wrap.innerHTML = `
+    <span class="msg-label">Innerstanding</span>
+    <div>Ya usaste tu carta gratis. Si quieres seguir descubriendo qué te dicen las cartas, elige tu acceso:</div>
+    <div class="paywall-options">
+      <button class="paywall-btn" id="payWeeklyBtn">Semanal · €2.22</button>
+      <button class="paywall-btn paywall-btn-main" id="payMonthlyBtn">Mensual · €8.88</button>
+    </div>
+  `;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  document.getElementById('payWeeklyBtn').addEventListener('click', () => startCheckout('weekly'));
+  document.getElementById('payMonthlyBtn').addEventListener('click', () => startCheckout('monthly'));
+}
 
 function pickSpanishVoice(){
   if (!('speechSynthesis' in window)) return;
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return;
+
+  const isSpanish = v => /^es/i.test(v.lang);
+  const isLatam = v => /es-VE|es-419|es-MX|es-US|es-CO|es-AR/i.test(v.lang);
+  const isEnhanced = v => /enhanced|premium|neural|natural/i.test(v.name);
+  // Nombres de voces de calidad "Enhanced" conocidas en iOS/macOS en español
+  const knownGoodNames = /mónica|monica|paulina|juan carlos|jorge|angelica|angélica/i;
+
   spanishVoice =
-    voices.find(v => /es-VE|es-419|es-MX|es-US/i.test(v.lang)) ||
-    voices.find(v => /^es/i.test(v.lang)) ||
+    voices.find(v => isSpanish(v) && isLatam(v) && isEnhanced(v)) ||
+    voices.find(v => isSpanish(v) && isEnhanced(v)) ||
+    voices.find(v => isSpanish(v) && knownGoodNames.test(v.name)) ||
+    voices.find(v => isSpanish(v) && isLatam(v)) ||
+    voices.find(v => isSpanish(v)) ||
     null;
 }
 if ('speechSynthesis' in window){
@@ -351,24 +626,317 @@ if ('speechSynthesis' in window){
   window.speechSynthesis.onvoiceschanged = pickSpanishVoice;
 }
 
-function speak(text, btn){
+function closeVideoMode(){
+  stopAllAudio();
+  const overlay = document.getElementById('videoModeOverlay');
+  if (overlay) overlay.remove();
+}
+
+function openVideoMode(cardOrCards, text){
+  stopAllAudio();
+  const cards = Array.isArray(cardOrCards) ? cardOrCards : [cardOrCards];
+
+  const overlay = document.createElement('div');
+  overlay.id = 'videoModeOverlay';
+  overlay.className = 'video-overlay';
+  overlay.innerHTML = `
+    <button class="video-close-btn" id="videoCloseBtn" aria-label="Cerrar">✕</button>
+    <div class="video-stage">
+      <img src="/cards/${cards[0].file}" alt="${cards[0].name}" class="video-card-img" id="videoCardImg">
+      <div class="video-gradient"></div>
+      <div class="video-brand">INNERSTANDING</div>
+      <div class="video-card-name" id="videoCardNameLabel">${cards[0].name}</div>
+      <div class="video-caption" id="videoCaption"></div>
+    </div>
+    <button class="draw-btn" id="videoPlayBtn">▶ Reproducir</button>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById('videoCloseBtn').addEventListener('click', closeVideoMode);
+
+  const captionEl = document.getElementById('videoCaption');
+  const imgEl = document.getElementById('videoCardImg');
+  const cardNameEl = document.getElementById('videoCardNameLabel');
+  const playBtn = document.getElementById('videoPlayBtn');
+
+  // Intentamos usar el marcador exacto que pide la IA para saber dónde
+  // termina cada carta. Si no aparece bien (el modelo no lo puso, o es
+  // modo contenido de 1 sola carta), caemos de vuelta al reparto por tercios.
+  const rawSegments = text.split(CARD_SEGMENT_MARKER).map(s => s.trim()).filter(Boolean);
+  let sentenceCardIndex = []; // índice de carta por cada frase, en paralelo a "sentences"
+  let sentences = [];
+
+  if (rawSegments.length === cards.length){
+    rawSegments.forEach((segment, cardIdx) => {
+      const cleanSegment = stripForSpeech(segment);
+      const segSentences = splitIntoSentences(cleanSegment);
+      segSentences.forEach(s => {
+        sentences.push(s);
+        sentenceCardIndex.push(cardIdx);
+      });
+    });
+  } else {
+    const cleanText = stripForSpeech(text);
+    sentences = splitIntoSentences(cleanText);
+    const sentencesPerCard = Math.max(1, Math.ceil(sentences.length / cards.length));
+    sentences.forEach((s, i) => {
+      sentenceCardIndex.push(Math.min(cards.length - 1, Math.floor(i / sentencesPerCard)));
+    });
+  }
+
+  let currentCardIndex = -1;
+
+  function chunkWords(sentence, maxWords){
+    const words = sentence.trim().split(/\s+/).filter(Boolean);
+    const chunks = [];
+    for (let w = 0; w < words.length; w += maxWords){
+      chunks.push(words.slice(w, w + maxWords).join(' '));
+    }
+    return chunks.length ? chunks : [sentence];
+  }
+
+  // Construye la línea de tiempo (qué texto mostrar y cuándo, y cuándo cambiar
+  // de carta) usando una duración ESTIMADA por cantidad de palabras.
+  function buildTimeline(rate){
+    const timeline = [];
+    let cumulativeMs = 0;
+    sentences.forEach((sentence, i) => {
+      const cardIndex = sentenceCardIndex[i];
+      const totalWords = sentence.trim().split(/\s+/).filter(Boolean).length || 1;
+      const wordsPerMinute = 185 * rate;
+      const sentenceDurationMs = (totalWords / wordsPerMinute) * 60000 + 250;
+      const chunks = chunkWords(sentence, 10);
+      let chunkOffsetMs = 0;
+
+      chunks.forEach((chunk, ci) => {
+        const chunkWordCount = chunk.trim().split(/\s+/).filter(Boolean).length;
+        const chunkDurationMs = sentenceDurationMs * (chunkWordCount / totalWords);
+        timeline.push({
+          at: cumulativeMs + chunkOffsetMs,
+          chunk,
+          isFirstOfSentence: ci === 0,
+          cardIndex
+        });
+        chunkOffsetMs += chunkDurationMs;
+      });
+
+      cumulativeMs += sentenceDurationMs;
+    });
+    return { timeline, totalMs: cumulativeMs };
+  }
+
+  function scheduleTimeline(timeline, scale){
+    timeline.forEach(item => {
+      setTimeout(() => {
+        captionEl.classList.remove('caption-in');
+        void captionEl.offsetWidth;
+        captionEl.textContent = item.chunk;
+        captionEl.classList.add('caption-in');
+
+        if (item.isFirstOfSentence && item.cardIndex !== currentCardIndex){
+          currentCardIndex = item.cardIndex;
+          imgEl.style.opacity = '0';
+          setTimeout(() => {
+            imgEl.src = `/cards/${cards[item.cardIndex].file}`;
+            imgEl.alt = cards[item.cardIndex].name;
+            cardNameEl.textContent = cards[item.cardIndex].name;
+            imgEl.style.opacity = '1';
+          }, 250);
+        }
+      }, item.at * scale);
+    });
+  }
+
+  function playWithBrowserVoice(){
+    sentences.forEach((sentence) => {
+      const utter = new SpeechSynthesisUtterance(sentence);
+      if (spanishVoice) utter.voice = spanishVoice;
+      utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
+      const vp = getVoiceParams(sentence);
+      utter.rate = vp.rate;
+      utter.pitch = vp.pitch;
+      window.speechSynthesis.speak(utter);
+    });
+    const { timeline } = buildTimeline(0.99);
+    scheduleTimeline(timeline, 1);
+  }
+
+  async function playWithClonedVoice(){
+    const { timeline, totalMs } = buildTimeline(1.0);
+    const fullText = sentences.join(' ');
+
+    const url = await synthesizeSpeech(fullText);
+    const audio = new Audio(url);
+    currentAudioEl = audio;
+
+    await new Promise((resolve, reject) => {
+      audio.addEventListener('loadedmetadata', resolve, { once: true });
+      audio.addEventListener('error', reject, { once: true });
+    });
+
+    const realMs = (audio.duration && isFinite(audio.duration)) ? audio.duration * 1000 : totalMs;
+    const scale = totalMs > 0 ? (realMs / totalMs) : 1;
+
+    scheduleTimeline(timeline, scale);
+    await audio.play();
+  }
+
+  playBtn.addEventListener('click', () => {
+    playBtn.remove();
+    stopAllAudio();
+
+    playWithClonedVoice().catch(err => {
+      console.error('Voz clonada no disponible en el video, usando voz del navegador:', err);
+      playWithBrowserVoice();
+    });
+  });
+}
+
+function getVoiceParams(sentence){
+  const isQuestion = /\?$/.test(sentence);
+  const isExclamation = /!$/.test(sentence);
+  const wiggle = (Math.random() * 0.08) - 0.04; // variación sutil para que no suene plano
+  if (isExclamation) return { rate: 1.06, pitch: 1.24 + wiggle };
+  if (isQuestion) return { rate: 0.99, pitch: 1.17 + wiggle };
+  return { rate: 0.99, pitch: 1.08 + wiggle };
+}
+
+function stripEmojis(text){
+  return text
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+function stripForSpeech(text){
+  let t = text;
+  t = t.replace(new RegExp(CARD_SEGMENT_MARKER.replace(/[@]/g, '\\@'), 'g'), ' ');
+  t = t.replace(/(https?:\/\/[^\s]+)/g, '');
+  t = t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '');
+  t = t.replace(/[*_#`~>→←↑↓]/g, '');
+  t = t.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+  t = t.replace(/[ \t]{2,}/g, ' ');
+  return t.trim();
+}
+
+function splitIntoSentences(text){
+  const sentences = [];
+  const regex = /[^.!?]*[.!?]+/g;
+  let lastIndex = 0;
+  let m;
+  while ((m = regex.exec(text)) !== null){
+    const chunk = m[0].trim();
+    if (chunk) sentences.push(chunk);
+    lastIndex = regex.lastIndex;
+  }
+  const remainder = text.slice(lastIndex).trim();
+  if (remainder) sentences.push(remainder);
+  return sentences.length ? sentences : [text];
+}
+
+let currentAudioEl = null;
+
+function stopAllAudio(){
+  if (currentAudioEl){
+    try{ currentAudioEl.pause(); }catch(e){}
+    currentAudioEl = null;
+  }
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+async function synthesizeSpeech(text){
+  const response = await fetch('/api/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text })
+  });
+  if (!response.ok){
+    let msg = 'Error de voz';
+    try{ const j = await response.json(); msg = j.error || msg; }catch(e){}
+    throw new Error(msg);
+  }
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
+
+function speakBrowserFallback(text, btn){
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   document.querySelectorAll('.speak-btn.speaking').forEach(b => b.classList.remove('speaking'));
-  const utter = new SpeechSynthesisUtterance(text);
-  if (spanishVoice) utter.voice = spanishVoice;
-  utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
-  utter.rate = 0.98;
-  utter.pitch = 1.0;
-  if (btn){
-    btn.classList.add('speaking');
-    utter.onend = () => btn.classList.remove('speaking');
-    utter.onerror = () => btn.classList.remove('speaking');
-  }
-  window.speechSynthesis.speak(utter);
+
+  const cleanText = stripForSpeech(text);
+  const sentences = splitIntoSentences(cleanText);
+  if (!sentences.length) return;
+
+  if (btn) btn.classList.add('speaking');
+
+  sentences.forEach((sentence, i) => {
+    const utter = new SpeechSynthesisUtterance(sentence);
+    if (spanishVoice) utter.voice = spanishVoice;
+    utter.lang = spanishVoice ? spanishVoice.lang : 'es-ES';
+
+    const vp = getVoiceParams(sentence);
+    utter.rate = vp.rate;
+    utter.pitch = vp.pitch;
+
+    if (btn && i === sentences.length - 1){
+      utter.onend = () => btn.classList.remove('speaking');
+      utter.onerror = () => btn.classList.remove('speaking');
+    }
+
+    window.speechSynthesis.speak(utter);
+  });
 }
 
-function addMessage(role, text){
+async function speak(text, btn){
+  stopAllAudio();
+  document.querySelectorAll('.speak-btn.speaking').forEach(b => b.classList.remove('speaking'));
+
+  const cleanText = stripForSpeech(text);
+  if (!cleanText) return;
+
+  if (btn) btn.classList.add('speaking');
+
+  try{
+    const url = await synthesizeSpeech(cleanText);
+    const audio = new Audio(url);
+    currentAudioEl = audio;
+    audio.onended = () => {
+      if (btn) btn.classList.remove('speaking');
+      URL.revokeObjectURL(url);
+      if (currentAudioEl === audio) currentAudioEl = null;
+    };
+    audio.onerror = () => {
+      if (btn) btn.classList.remove('speaking');
+      if (currentAudioEl === audio) currentAudioEl = null;
+    };
+    await audio.play();
+  }catch(err){
+    console.error('Voz clonada no disponible, usando voz del navegador:', err);
+    speakBrowserFallback(text, btn);
+  }
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderMessageBody(text){
+  const withoutMarker = text.split(CARD_SEGMENT_MARKER).join('\n\n');
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const escaped = escapeHtml(withoutMarker);
+  return escaped.replace(urlRegex, (url) => {
+    const cleanUrl = url.replace(/[).,;:!?]+$/, '');
+    const trailing = url.slice(cleanUrl.length);
+    const isBooking = cleanUrl.includes('innerstandingcoaching.netlify.app');
+    const label = isBooking ? 'Agendar sesión 1:1 →' : cleanUrl.replace(/^https?:\/\//, '');
+    return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="chat-link${isBooking ? ' chat-link-cta' : ''}">${label}</a>${trailing}`;
+  });
+}
+
+function addMessage(role, text, forceSpeak, videoCard){
   const wrap = document.createElement('div');
   wrap.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
   const label = document.createElement('span');
@@ -376,10 +944,20 @@ function addMessage(role, text){
   label.textContent = role === 'user' ? 'Tú' : 'Innerstanding';
   wrap.appendChild(label);
   const body = document.createElement('div');
-  body.textContent = text;
+  if (role === 'ai'){
+    body.innerHTML = renderMessageBody(text);
+  } else {
+    body.textContent = text;
+  }
   wrap.appendChild(body);
 
-  if (role === 'ai' && 'speechSynthesis' in window){
+  if (role === 'ai' && videoCard){
+    const videoBtn = document.createElement('button');
+    videoBtn.className = 'video-mode-btn';
+    videoBtn.innerHTML = '🎥 Ver como video';
+    videoBtn.addEventListener('click', () => openVideoMode(videoCard, text));
+    wrap.appendChild(videoBtn);
+  } else if (role === 'ai' && 'speechSynthesis' in window){
     const btn = document.createElement('button');
     btn.className = 'speak-btn';
     btn.setAttribute('aria-label', 'Escuchar');
@@ -387,9 +965,28 @@ function addMessage(role, text){
     btn.addEventListener('click', () => speak(text, btn));
     wrap.appendChild(btn);
 
-    if (autoVoiceToggle && autoVoiceToggle.checked){
+    if (forceSpeak || (autoVoiceToggle && autoVoiceToggle.checked)){
       speak(text, btn);
     }
+  }
+
+  if (role === 'ai'){
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.setAttribute('aria-label', 'Copiar texto');
+    copyBtn.textContent = '📋';
+    copyBtn.addEventListener('click', async () => {
+      try{
+        await navigator.clipboard.writeText(text);
+        copyBtn.classList.add('copied');
+        copyBtn.textContent = '✓';
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.textContent = '📋';
+        }, 1500);
+      }catch(e){ console.error('No se pudo copiar', e); }
+    });
+    wrap.appendChild(copyBtn);
   }
 
   chat.appendChild(wrap);
@@ -431,13 +1028,22 @@ function addCardDraw(){
   });
 }
 
+let paywallShown = false;
+
 function updateCardButton(){
-  const remaining = MAX_CARDS - cardsDrawnCount;
+  const max = getMaxCards();
+  const remaining = max - cardsDrawnCount;
   if (remaining <= 0){
     cardBtn.disabled = true;
-    cardBtn.setAttribute('aria-label', 'Ya usaste tus 3 cartas');
-    cardsCounter.textContent = 'Ya usaste tus 3 cartas para esta sesión. Puedes seguir conversando con lo que ya salió.';
-    cardsCounter.classList.add('limit-note');
+    cardBtn.setAttribute('aria-label', 'Ya usaste tu carta gratis');
+    if (isFinite(max)){
+      cardsCounter.textContent = 'Ya usaste tu carta gratis para esta sesión.';
+      cardsCounter.classList.add('limit-note');
+      if (!paywallShown){
+        paywallShown = true;
+        showPaywall();
+      }
+    }
   } else {
     cardBtn.disabled = false;
     cardsCounter.textContent = 'Innerstanding es un espacio de introspección, no un sustituto de terapia o coaching profesional.';
@@ -517,7 +1123,7 @@ function addRetryPrompt(){
   });
 }
 
-async function callClaude(userText){
+async function callClaude(userText, forceSpeak, videoCard){
   if (userText !== null){
     history.push({ role: 'user', content: userText });
   }
@@ -528,7 +1134,7 @@ async function callClaude(userText){
     const reply = await requestClaudeWithRetry(3);
     hideTyping();
     history.push({ role: 'assistant', content: reply });
-    addMessage('ai', reply);
+    addMessage('ai', reply, forceSpeak, videoCard);
   }catch(err){
     hideTyping();
     addRetryPrompt();
@@ -542,12 +1148,71 @@ function sendUserTurn(fullText, displayText){
   callClaude(fullText);
 }
 
+function revealRandomCardInline(){
+  const card = CARDS[Math.floor(Math.random() * CARDS.length)];
+  const wrap = document.createElement('div');
+  wrap.className = 'card-draw';
+  wrap.innerHTML = `
+    <div class="tarot-card revealed"><img src="/cards/${card.file}" alt="${card.name}"></div>
+    <div class="card-name">${card.name}</div>
+  `;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  return card;
+}
+
+function runContentMode(){
+  if (!tryUnlockContent()) return;
+  const card = revealRandomCardInline();
+  const prompt = `Modo contenido: saqué "${card.name}" para publicar hoy como carta del día. Dame directo la versión corta para contenido — 2-3 frases con gancho real, lista para copiar y pegar en redes, sin preguntarme nada antes ni pedirme contexto.`;
+  history.push({ role: 'user', content: prompt });
+  callClaude(null, false, card);
+}
+
+const ZODIAC_SIGNS = {
+  'aries':'Aries','tauro':'Tauro','géminis':'Géminis','geminis':'Géminis',
+  'cáncer':'Cáncer','cancer':'Cáncer','leo':'Leo','virgo':'Virgo','libra':'Libra',
+  'escorpio':'Escorpio','sagitario':'Sagitario','capricornio':'Capricornio',
+  'acuario':'Acuario','piscis':'Piscis'
+};
+
+function detectZodiacSign(text){
+  const lower = text.toLowerCase();
+  for (const key in ZODIAC_SIGNS){
+    const regex = new RegExp('\\b' + key + '\\b', 'i');
+    if (regex.test(lower)) return ZODIAC_SIGNS[key];
+  }
+  return null;
+}
+
+function runZodiacMode(sign, userText){
+  if (!tryUnlockContent()){
+    sendUserTurn(userText);
+    return;
+  }
+  addMessage('user', userText);
+  const cards = [revealRandomCardInline(), revealRandomCardInline(), revealRandomCardInline()];
+  const cardList = cards.map((c, i) => `${i + 1}) ${c.name}`).join(', ');
+  const prompt = `Modo contenido / horóscopo hablado — lectura de 3 cartas para ${sign}, pensada para un video de al menos un minuto. Saqué estas 3 cartas en orden: ${cardList}. Empieza reconociendo el signo, algo como "vamos a ver qué le dicen las cartas a ${sign} hoy" — y luego interpreta las 3 cartas en orden, conectando cada una con una parte distinta del momento de ${sign} (por ejemplo: la primera con lo que está viviendo ahorita, la segunda con el reto o bloqueo, la tercera con el consejo o hacia dónde va). Tono hablado, cálido, con gancho, entre 8 y 12 frases en total para que dure alrededor de un minuto leído en voz alta. Que se sienta como una lectura completa y conectada, no tres mini-lecturas sueltas.
+
+Importante — formato de la respuesta: separa el bloque de cada carta con esta línea EXACTA, sola, en su propio renglón: ${CARD_SEGMENT_MARKER}
+Debe haber exactamente 2 de esas líneas en total (entre carta 1 y carta 2, y entre carta 2 y carta 3). No escribas nada más en esas líneas — ni números, ni el nombre de la carta, solo el marcador.`;
+  history.push({ role: 'user', content: prompt });
+  callClaude(null, false, cards);
+}
+
 function handleSend(){
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
   input.style.height = 'auto';
-  sendUserTurn(text);
+
+  const sign = detectZodiacSign(text);
+  if (sign){
+    runZodiacMode(sign, text);
+  } else {
+    sendUserTurn(text);
+  }
 }
 
 function init(){
@@ -558,13 +1223,15 @@ function init(){
     autoVoiceToggle = document.getElementById('autoVoice');
     cardBtn = document.getElementById('cardBtn');
     cardsCounter = document.getElementById('cardsCounter');
+    contentModeBtn = document.getElementById('contentModeBtn');
     chat.innerHTML = '';
 
     sendBtn.addEventListener('click', handleSend);
     cardBtn.addEventListener('click', () => {
-      if (cardsDrawnCount >= MAX_CARDS) return;
+      if (cardsDrawnCount >= getMaxCards()) return;
       addCardDraw();
     });
+    contentModeBtn.addEventListener('click', runContentMode);
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();
@@ -578,6 +1245,7 @@ function init(){
 
     addMessage('ai', "Bienvenida a tu espacio. Antes de sacar la carta, hazte una pregunta o pon una intención en tu mente — puede ser sobre lo que sea que estés atravesando ahorita. Si quieres, cuéntamela para profundizar juntas. Si no, solo saca la carta cuando estés lista.");
     addCardDraw();
+    checkAccessOnLoad();
   }catch(err){
     document.body.innerHTML = '<div style="padding:40px 24px; color:#ece5d8; font-family:sans-serif; text-align:center;">Algo no cargó bien. Intenta abrir este archivo en Chrome o Safari en vez del visor de archivos.<br><br><span style="opacity:0.5; font-size:0.75rem;">' + (err && err.message ? err.message : '') + '</span></div>';
     console.error(err);
