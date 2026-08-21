@@ -324,7 +324,31 @@
   .card-btn svg{ width:18px; height:18px; }
   .card-btn:hover{ background:rgba(198,161,91,0.12); border-color:var(--gold); }
   .card-btn:disabled{ opacity:0.3; cursor:default; }
+  .card-btn.pulse-attention{
+    animation:pulseAttention 1.4s ease-in-out infinite;
+  }
+  @keyframes pulseAttention{
+    0%, 100%{ box-shadow:0 0 0 0 rgba(198,161,91,0.55); }
+    50%{ box-shadow:0 0 0 8px rgba(198,161,91,0); }
+  }
   #cardsCounter.limit-note{ color:var(--gold-dim); }
+
+  .card-nudge{
+    max-width:86%;
+    margin:8px 0;
+    padding:14px 18px;
+    background:rgba(198,161,91,0.08);
+    border:1px solid var(--gold-dim);
+    border-radius:16px;
+    color:var(--parchment);
+    font-size:0.9rem; line-height:1.5;
+    text-align:center;
+    animation:rise 0.35s ease both;
+  }
+  .card-nudge .nudge-icon{
+    display:inline-block; color:var(--gold); font-size:1rem;
+  }
+
   textarea{
     flex:1;
     background:transparent; border:none; outline:none;
@@ -526,6 +550,8 @@ function tryUnlockContent(){
 }
 let history = [];
 let cardsDrawnCount = 0;
+let freeChatMessagesCount = 0;
+let cardNudgeShown = false;
 let spanishVoice = null;
 
 // ---------- Acceso: admin (tú) vs. público vs. pagado ----------
@@ -1167,9 +1193,9 @@ async function callClaude(userText, forceSpeak, videoCard){
   }
 }
 
-function sendUserTurn(fullText, displayText){
+async function sendUserTurn(fullText, displayText){
   addMessage('user', displayText || fullText);
-  callClaude(fullText);
+  await callClaude(fullText);
 }
 
 function revealRandomCardInline(){
@@ -1225,6 +1251,15 @@ Debe haber exactamente 2 de esas líneas en total (entre carta 1 y carta 2, y en
   callClaude(null, false, cards);
 }
 
+function showCardNudge(){
+  const wrap = document.createElement('div');
+  wrap.className = 'card-nudge';
+  wrap.innerHTML = `✨ Si quieres profundizar más, saca otra carta — toca el ícono <span class="nudge-icon">🎴</span> junto al cuadro de texto, abajo a la izquierda.`;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  if (cardBtn) cardBtn.classList.add('pulse-attention');
+}
+
 function handleSend(){
   const text = input.value.trim();
   if (!text) return;
@@ -1234,9 +1269,19 @@ function handleSend(){
   const sign = detectZodiacSign(text);
   if (sign){
     runZodiacMode(sign, text);
-  } else {
-    sendUserTurn(text);
+    return;
   }
+
+  const isPublicTier = isFinite(getMaxCards());
+  const shouldCount = isPublicTier && cardsDrawnCount >= 1;
+  if (shouldCount) freeChatMessagesCount++;
+
+  sendUserTurn(text).then(() => {
+    if (shouldCount && freeChatMessagesCount >= 3 && !cardNudgeShown){
+      cardNudgeShown = true;
+      showCardNudge();
+    }
+  });
 }
 
 function init(){
@@ -1257,6 +1302,7 @@ function init(){
 
     sendBtn.addEventListener('click', handleSend);
     cardBtn.addEventListener('click', () => {
+      cardBtn.classList.remove('pulse-attention');
       if (cardsDrawnCount >= getMaxCards()){
         showPaywall();
         return;
