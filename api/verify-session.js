@@ -3,9 +3,9 @@
 // y guarda en la base de datos (Vercel KV) que ese dispositivo ya tiene acceso.
 
 async function kvSet(key, value) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) throw new Error('Falta configurar KV_REST_API_URL / KV_REST_API_TOKEN en Vercel.');
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) throw new Error('Falta configurar KV_REST_API_URL/UPSTASH_REDIS_REST_URL y su token en Vercel.');
   await fetch(`${url}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
