@@ -255,6 +255,24 @@
   .draw-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
   .draw-btn:disabled{ opacity:0.35; cursor:default; }
 
+  .paywall-options{
+    display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;
+  }
+  .paywall-btn{
+    flex:1; min-width:130px;
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-weight:700; font-size:0.85rem;
+    background:transparent; color:var(--gold);
+    border:1px solid var(--gold-dim);
+    padding:12px 14px; border-radius:14px;
+    cursor:pointer; transition:all 0.2s ease;
+  }
+  .paywall-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
+  .paywall-btn-main{
+    background:var(--gold); color:var(--ink); border-color:var(--gold);
+  }
+  .paywall-btn-main:hover{ opacity:0.9; background:var(--gold); }
+
   /* ---------- Input bar ---------- */
   .input-bar{
     position:fixed; bottom:0; left:0; right:0;
@@ -473,8 +491,116 @@ function tryUnlockContent(){
 }
 let history = [];
 let cardsDrawnCount = 0;
-const MAX_CARDS = 3;
 let spanishVoice = null;
+
+// ---------- Acceso: admin (tú) vs. público vs. pagado ----------
+const DEVICE_ID_KEY = 'innerstanding_device_id';
+const PAID_ACCESS_KEY = 'innerstanding_paid_until';
+const FREE_CARDS_FOR_PUBLIC = 1;
+
+function getDeviceId(){
+  try{
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id){
+      id = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  }catch(e){
+    return 'dev_temp_' + Date.now();
+  }
+}
+
+function hasPaidAccessCached(){
+  try{
+    const until = parseInt(localStorage.getItem(PAID_ACCESS_KEY) || '0', 10);
+    return until > Date.now();
+  }catch(e){ return false; }
+}
+
+function savePaidAccessCache(untilTimestamp){
+  try{ localStorage.setItem(PAID_ACCESS_KEY, String(untilTimestamp)); }catch(e){}
+}
+
+function getMaxCards(){
+  if (isContentUnlocked()) return Infinity; // tú, con la clave
+  if (hasPaidAccessCached()) return Infinity; // alguien que ya pagó
+  return FREE_CARDS_FOR_PUBLIC; // público general
+}
+
+async function checkAccessOnLoad(){
+  const deviceId = getDeviceId();
+
+  // Si venimos de vuelta de Stripe con un session_id, confirmamos el pago primero.
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+  if (sessionId){
+    try{
+      const resp = await fetch('/api/verify-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+      const data = await resp.json();
+      if (data.active && data.until){
+        savePaidAccessCache(data.until);
+      }
+    }catch(e){ console.error('No se pudo verificar el pago', e); }
+    // Limpiar el session_id de la URL para que no quede pegado
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
+  // Revisamos también contra la base de datos, por si pagó desde otro dispositivo/navegador
+  try{
+    const resp = await fetch('/api/check-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId })
+    });
+    const data = await resp.json();
+    if (data.active && data.until){
+      savePaidAccessCache(data.until);
+    }
+  }catch(e){ console.error('No se pudo revisar el acceso', e); }
+
+  if (cardBtn) updateCardButton();
+}
+
+async function startCheckout(plan){
+  const deviceId = getDeviceId();
+  try{
+    const resp = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId, plan })
+    });
+    const data = await resp.json();
+    if (data.url){
+      window.location.href = data.url;
+    } else {
+      window.alert(data.error || 'No se pudo iniciar el pago. Intenta de nuevo.');
+    }
+  }catch(e){
+    window.alert('No se pudo conectar con el pago. Revisa tu conexión.');
+  }
+}
+
+function showPaywall(){
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ai';
+  wrap.innerHTML = `
+    <span class="msg-label">Innerstanding</span>
+    <div>Ya usaste tu carta gratis. Si quieres seguir descubriendo qué te dicen las cartas, elige tu acceso:</div>
+    <div class="paywall-options">
+      <button class="paywall-btn" id="payWeeklyBtn">Semanal · €2.22</button>
+      <button class="paywall-btn paywall-btn-main" id="payMonthlyBtn">Mensual · €8.88</button>
+    </div>
+  `;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  document.getElementById('payWeeklyBtn').addEventListener('click', () => startCheckout('weekly'));
+  document.getElementById('payMonthlyBtn').addEventListener('click', () => startCheckout('monthly'));
+}
 
 function pickSpanishVoice(){
   if (!('speechSynthesis' in window)) return;
@@ -902,13 +1028,22 @@ function addCardDraw(){
   });
 }
 
+let paywallShown = false;
+
 function updateCardButton(){
-  const remaining = MAX_CARDS - cardsDrawnCount;
+  const max = getMaxCards();
+  const remaining = max - cardsDrawnCount;
   if (remaining <= 0){
     cardBtn.disabled = true;
-    cardBtn.setAttribute('aria-label', 'Ya usaste tus 3 cartas');
-    cardsCounter.textContent = 'Ya usaste tus 3 cartas para esta sesión. Puedes seguir conversando con lo que ya salió.';
-    cardsCounter.classList.add('limit-note');
+    cardBtn.setAttribute('aria-label', 'Ya usaste tu carta gratis');
+    if (isFinite(max)){
+      cardsCounter.textContent = 'Ya usaste tu carta gratis para esta sesión.';
+      cardsCounter.classList.add('limit-note');
+      if (!paywallShown){
+        paywallShown = true;
+        showPaywall();
+      }
+    }
   } else {
     cardBtn.disabled = false;
     cardsCounter.textContent = 'Innerstanding es un espacio de introspección, no un sustituto de terapia o coaching profesional.';
@@ -1093,7 +1228,7 @@ function init(){
 
     sendBtn.addEventListener('click', handleSend);
     cardBtn.addEventListener('click', () => {
-      if (cardsDrawnCount >= MAX_CARDS) return;
+      if (cardsDrawnCount >= getMaxCards()) return;
       addCardDraw();
     });
     contentModeBtn.addEventListener('click', runContentMode);
@@ -1110,6 +1245,7 @@ function init(){
 
     addMessage('ai', "Bienvenida a tu espacio. Antes de sacar la carta, hazte una pregunta o pon una intención en tu mente — puede ser sobre lo que sea que estés atravesando ahorita. Si quieres, cuéntamela para profundizar juntas. Si no, solo saca la carta cuando estés lista.");
     addCardDraw();
+    checkAccessOnLoad();
   }catch(err){
     document.body.innerHTML = '<div style="padding:40px 24px; color:#ece5d8; font-family:sans-serif; text-align:center;">Algo no cargó bien. Intenta abrir este archivo en Chrome o Safari en vez del visor de archivos.<br><br><span style="opacity:0.5; font-size:0.75rem;">' + (err && err.message ? err.message : '') + '</span></div>';
     console.error(err);
