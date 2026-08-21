@@ -255,23 +255,50 @@
   .draw-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
   .draw-btn:disabled{ opacity:0.35; cursor:default; }
 
+  .paywall-card{
+    max-width:86%;
+    margin:8px 0;
+    padding:26px 22px;
+    background:linear-gradient(155deg, var(--ink-2), var(--ink-3));
+    border:1px solid var(--gold-dim);
+    border-radius:20px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,0.35);
+    animation:rise 0.35s ease both;
+  }
+  .paywall-icon{
+    color:var(--gold); font-size:1.6rem; margin-bottom:10px;
+  }
+  .paywall-title{
+    font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    font-size:1.15rem; color:var(--parchment);
+    margin-bottom:6px; line-height:1.35;
+  }
+  .paywall-subtitle{
+    font-size:0.85rem; color:var(--parchment-dim);
+    margin-bottom:20px;
+  }
   .paywall-options{
-    display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;
+    display:flex; gap:10px; flex-wrap:wrap;
   }
   .paywall-btn{
-    flex:1; min-width:130px;
+    flex:1; min-width:120px;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
     font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    font-weight:700; font-size:0.85rem;
-    background:transparent; color:var(--gold);
+    background:transparent; color:var(--parchment);
     border:1px solid var(--gold-dim);
-    padding:12px 14px; border-radius:14px;
+    padding:14px 12px; border-radius:14px;
     cursor:pointer; transition:all 0.2s ease;
   }
-  .paywall-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
+  .paywall-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); transform:translateY(-1px); }
+  .paywall-btn-label{ font-size:0.78rem; letter-spacing:0.03em; opacity:0.85; }
+  .paywall-btn-price{ font-size:1.15rem; font-weight:700; color:var(--gold); }
   .paywall-btn-main{
-    background:var(--gold); color:var(--ink); border-color:var(--gold);
+    background:var(--gold); border-color:var(--gold);
   }
-  .paywall-btn-main:hover{ opacity:0.9; background:var(--gold); }
+  .paywall-btn-main .paywall-btn-label{ color:var(--ink); opacity:0.75; }
+  .paywall-btn-main .paywall-btn-price{ color:var(--ink); }
+  .paywall-btn-main:hover{ opacity:0.92; background:var(--gold); }
 
   /* ---------- Input bar ---------- */
   .input-bar{
@@ -595,13 +622,20 @@ async function startCheckout(plan){
 
 function showPaywall(){
   const wrap = document.createElement('div');
-  wrap.className = 'msg ai';
+  wrap.className = 'paywall-card';
   wrap.innerHTML = `
-    <span class="msg-label">Innerstanding</span>
-    <div>Ya usaste tu carta gratis. Si quieres seguir descubriendo qué te dicen las cartas, elige tu acceso:</div>
+    <div class="paywall-icon">✦</div>
+    <div class="paywall-title">Sigue descubriendo lo que hay detrás</div>
+    <div class="paywall-subtitle">Desbloquea lecturas ilimitadas con Innerstanding</div>
     <div class="paywall-options">
-      <button class="paywall-btn" id="payWeeklyBtn">Semanal · €2.22</button>
-      <button class="paywall-btn paywall-btn-main" id="payMonthlyBtn">Mensual · €8.88</button>
+      <button class="paywall-btn" id="payWeeklyBtn">
+        <span class="paywall-btn-label">Semanal</span>
+        <span class="paywall-btn-price">€2.22</span>
+      </button>
+      <button class="paywall-btn paywall-btn-main" id="payMonthlyBtn">
+        <span class="paywall-btn-label">Mensual</span>
+        <span class="paywall-btn-price">€8.88</span>
+      </button>
     </div>
   `;
   chat.appendChild(wrap);
@@ -1036,27 +1070,9 @@ function addCardDraw(){
   });
 }
 
-let paywallShown = false;
-
 function updateCardButton(){
-  const max = getMaxCards();
-  const remaining = max - cardsDrawnCount;
-  if (remaining <= 0){
-    cardBtn.disabled = true;
-    cardBtn.setAttribute('aria-label', 'Ya usaste tu carta gratis');
-    if (isFinite(max)){
-      cardsCounter.textContent = 'Ya usaste tu carta gratis para esta sesión.';
-      cardsCounter.classList.add('limit-note');
-      if (!paywallShown){
-        paywallShown = true;
-        showPaywall();
-      }
-    }
-  } else {
-    cardBtn.disabled = false;
-    cardsCounter.textContent = 'Innerstanding es un espacio de introspección, no un sustituto de terapia o coaching profesional.';
-    cardsCounter.classList.remove('limit-note');
-  }
+  cardsCounter.textContent = 'Innerstanding es un espacio de introspección, no un sustituto de terapia o coaching profesional.';
+  cardsCounter.classList.remove('limit-note');
 }
 
 function showTyping(){
@@ -1241,7 +1257,10 @@ function init(){
 
     sendBtn.addEventListener('click', handleSend);
     cardBtn.addEventListener('click', () => {
-      if (cardsDrawnCount >= getMaxCards()) return;
+      if (cardsDrawnCount >= getMaxCards()){
+        showPaywall();
+        return;
+      }
       addCardDraw();
     });
     contentModeBtn.addEventListener('click', runContentMode);
