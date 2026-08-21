@@ -4,8 +4,8 @@
 // y que reemplaces los Price ID de abajo con los reales de tu cuenta de Stripe.
 
 const PRICE_IDS = {
-  weekly: 'REEMPLAZA_CON_TU_PRICE_ID_SEMANAL',   // ej: price_1AbCdEfGhIjKlMnOp
-  monthly: 'REEMPLAZA_CON_TU_PRICE_ID_MENSUAL'
+  weekly: 'price_1U6yz2FvFib9QAvbUUqyaD9r',
+  monthly: 'price_1U6yphFvFib9QAvbP391S1Ka'
 };
 
 export default async function handler(req, res) {
