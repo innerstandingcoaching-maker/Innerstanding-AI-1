@@ -702,23 +702,19 @@ async function checkAccessOnLoad(){
   updateProgramStatusDisplay();
 }
 
-async function startCheckout(plan){
+const PAYMENT_LINKS = {
+  weekly: 'https://buy.stripe.com/6oU5kD5NM4bfglFg2Cbwk00',
+  monthly: 'https://buy.stripe.com/fZuaEX2BA237b1l5nYbwk01'
+};
+
+function startCheckout(plan){
   const deviceId = getDeviceId();
-  try{
-    const resp = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deviceId, plan })
-    });
-    const data = await resp.json();
-    if (data.url){
-      window.location.href = data.url;
-    } else {
-      window.alert(data.error || 'No se pudo iniciar el pago. Intenta de nuevo.');
-    }
-  }catch(e){
-    window.alert('No se pudo conectar con el pago. Revisa tu conexión.');
+  const link = PAYMENT_LINKS[plan];
+  if (!link){
+    window.alert('No se pudo iniciar el pago. Intenta de nuevo.');
+    return;
   }
+  window.location.href = link + '?client_reference_id=' + encodeURIComponent(deviceId);
 }
 
 function showPaywall(){
