@@ -4,8 +4,8 @@
 // y que reemplaces los Price ID de abajo con los reales de tu cuenta de Stripe.
 
 const PRICE_IDS = {
-  weekly: 'price_1U6yz2FvFib9QAvbUUqyaD9r',
-  monthly: 'price_1U6yphFvFib9QAvbP391S1Ka'
+  weekly: 'price_1U6zA0FvFib9QAvbYI0OdfAu',
+  monthly: 'price_1U7KjhFvFib9QAvbgNqwlE2E'
 };
 
 export default async function handler(req, res) {
@@ -54,8 +54,7 @@ export default async function handler(req, res) {
 
     if (!upstream.ok) {
       const msg = (data && data.error && data.error.message) || 'Error creando la sesión de pago.';
-      const keyHint = stripeKey.slice(0, 12) + '...' + stripeKey.slice(-4);
-      res.status(upstream.status).json({ error: msg + ' [clave usada: ' + keyHint + ']' });
+      res.status(upstream.status).json({ error: msg });
       return;
     }
 
