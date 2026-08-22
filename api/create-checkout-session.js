@@ -54,7 +54,8 @@ export default async function handler(req, res) {
 
     if (!upstream.ok) {
       const msg = (data && data.error && data.error.message) || 'Error creando la sesión de pago.';
-      res.status(upstream.status).json({ error: msg });
+      const keyHint = stripeKey.slice(0, 12) + '...' + stripeKey.slice(-4);
+      res.status(upstream.status).json({ error: msg + ' [clave usada: ' + keyHint + ']' });
       return;
     }
 
