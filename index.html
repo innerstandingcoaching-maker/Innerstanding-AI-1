@@ -591,10 +591,22 @@ function savePaidAccessCache(untilTimestamp){
   try{ localStorage.setItem(PAID_ACCESS_KEY, String(untilTimestamp)); }catch(e){}
 }
 
+const FREE_CARD_USED_KEY = 'innerstanding_free_card_used';
+
+function hasUsedFreeCard(){
+  try{ return localStorage.getItem(FREE_CARD_USED_KEY) === 'yes'; }
+  catch(e){ return false; }
+}
+
+function markFreeCardUsed(){
+  try{ localStorage.setItem(FREE_CARD_USED_KEY, 'yes'); }catch(e){}
+}
+
 function getMaxCards(){
   if (isContentUnlocked()) return Infinity; // tú, con la clave
   if (hasPaidAccessCached()) return Infinity; // alguien que ya pagó
-  return FREE_CARDS_FOR_PUBLIC; // público general
+  if (hasUsedFreeCard()) return 0; // público que ya gastó su carta gratis, en cualquier sesión anterior
+  return FREE_CARDS_FOR_PUBLIC; // público general, primera vez
 }
 
 // ---------- Programa de 90 días (Claridad → Patrón → Decisión) ----------
@@ -1151,6 +1163,9 @@ function addCardDraw(){
     wrap.appendChild(label);
 
     cardsDrawnCount++;
+    if (!isContentUnlocked() && !hasPaidAccessCached()){
+      markFreeCardUsed();
+    }
     updateCardButton();
 
     setTimeout(() => {
@@ -1385,8 +1400,13 @@ function init(){
       input.style.height = Math.min(input.scrollHeight, 120) + 'px';
     });
 
-    addMessage('ai', "Bienvenida a tu espacio. Antes de sacar la carta, hazte una pregunta o pon una intención en tu mente — puede ser sobre lo que sea que estés atravesando ahorita. Si quieres, cuéntamela para profundizar juntas. Si no, solo saca la carta cuando estés lista.");
-    addCardDraw();
+    if (getMaxCards() > cardsDrawnCount){
+      addMessage('ai', "Bienvenida a tu espacio. Antes de sacar la carta, hazte una pregunta o pon una intención en tu mente — puede ser sobre lo que sea que estés atravesando ahorita. Si quieres, cuéntamela para profundizar juntas. Si no, solo saca la carta cuando estés lista.");
+      addCardDraw();
+    } else {
+      addMessage('ai', "Bienvenida de vuelta. Ya usaste tu lectura gratuita — si quieres seguir descubriendo qué te dicen las cartas, aquí tienes tu acceso:");
+      showPaywall();
+    }
     checkAccessOnLoad();
   }catch(err){
     document.body.innerHTML = '<div style="padding:40px 24px; color:#ece5d8; font-family:sans-serif; text-align:center;">Algo no cargó bien. Intenta abrir este archivo en Chrome o Safari en vez del visor de archivos.<br><br><span style="opacity:0.5; font-size:0.75rem;">' + (err && err.message ? err.message : '') + '</span></div>';
