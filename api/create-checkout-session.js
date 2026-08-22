@@ -2,16 +2,33 @@
 // Crea una sesión de pago de Stripe (suscripción semanal o mensual).
 // Necesita STRIPE_SECRET_KEY en las variables de entorno de Vercel.
 //
-// OJO: en vez de guardar un Price ID fijo (que cambia cada vez que se toca
-// el producto en Stripe), guardamos el PRODUCT ID — mucho más estable — y en
-// cada pago le preguntamos a Stripe cuál es el precio activo AHORA MISMO para
-// ese producto. Así, aunque el precio se regenere solo en Stripe, la app
-// nunca se rompe.
+// OJO: aquí NO guardamos ningún ID fijo de Stripe (ni de producto ni de
+// precio) — cambian solos cada vez que se toca algo en el panel de Stripe.
+// En su lugar, buscamos el producto por su NOMBRE exacto cada vez que alguien
+// va a pagar, y de ahí sacamos su precio activo. Mientras el nombre del
+// producto en Stripe siga siendo el mismo, esto nunca se rompe, sin importar
+// cuántas veces se edite el producto o se le cambien los IDs por dentro.
 
-const PRODUCT_IDS = {
-  weekly: 'prod_V7DPkjrADNkq15',
-  monthly: 'prod_V7cmvGvmWtfr6j'
+const PRODUCT_NAMES = {
+  weekly: 'Innerstanding — Acceso semanal',
+  monthly: 'Innerstanding — Acceso mensual'
 };
+
+async function findProductIdByName(name, stripeKey){
+  const url = `https://api.stripe.com/v1/products?active=true&limit=100`;
+  const upstream = await fetch(url, {
+    headers: { 'Authorization': 'Bearer ' + stripeKey }
+  });
+  const data = await upstream.json();
+  if (!upstream.ok) {
+    throw new Error((data && data.error && data.error.message) || 'Error buscando el producto.');
+  }
+  const match = (data.data || []).find(p => p.name === name);
+  if (!match) {
+    throw new Error(`No encontré ningún producto activo en Stripe llamado exactamente "${name}".`);
+  }
+  return match.id;
+}
 
 async function getActivePriceId(productId, stripeKey){
   const url = `https://api.stripe.com/v1/prices?product=${encodeURIComponent(productId)}&active=true&limit=1`;
@@ -41,7 +58,7 @@ export default async function handler(req, res) {
   }
 
   const { deviceId, plan } = req.body || {};
-  if (!deviceId || !plan || !PRODUCT_IDS[plan]) {
+  if (!deviceId || !plan || !PRODUCT_NAMES[plan]) {
     res.status(400).json({ error: 'Faltan datos (deviceId o plan no válido).' });
     return;
   }
@@ -49,7 +66,8 @@ export default async function handler(req, res) {
   const origin = req.headers.origin || ('https://' + req.headers.host);
 
   try {
-    const priceId = await getActivePriceId(PRODUCT_IDS[plan], stripeKey);
+    const productId = await findProductIdByName(PRODUCT_NAMES[plan], stripeKey);
+    const priceId = await getActivePriceId(productId, stripeKey);
 
     const params = new URLSearchParams();
     params.append('mode', 'subscription');
