@@ -11,6 +11,21 @@ async function kvSet(key, value) {
   });
 }
 
+async function kvGet(key) {
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const resp = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await resp.json();
+    return (data && data.result) ? data.result : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Método no permitido' });
@@ -53,16 +68,29 @@ export default async function handler(req, res) {
       ? subscription.current_period_end * 1000
       : (Date.now() + 31 * 24 * 60 * 60 * 1000);
 
+    let programStart = Date.now();
+
     if (deviceId) {
+      // Si ya existía un registro previo (ej. una renovación), respetamos
+      // la fecha de inicio original — el "Día 1" no se reinicia solo porque pague de nuevo.
+      const existingRaw = await kvGet(`access:${deviceId}`);
+      if (existingRaw) {
+        try {
+          const existing = JSON.parse(existingRaw);
+          if (existing.programStart) programStart = existing.programStart;
+        } catch (e) {}
+      }
+
       await kvSet(`access:${deviceId}`, JSON.stringify({
         active: true,
         customerId: session.customer || null,
         subscriptionId: subscription ? subscription.id : null,
-        until: currentPeriodEnd
+        until: currentPeriodEnd,
+        programStart
       }));
     }
 
-    res.status(200).json({ active: true, until: currentPeriodEnd });
+    res.status(200).json({ active: true, until: currentPeriodEnd, programStart });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Error interno del servidor.' });
   }

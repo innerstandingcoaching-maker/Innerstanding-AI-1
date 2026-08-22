@@ -78,6 +78,26 @@ Si te piden explícitamente una "versión corta para contenido", "para reel" o "
 
 Si el mensaje te pide un marcador o línea exacta para separar partes de tu respuesta (por ejemplo, para sincronizar con un video), sigue esa instrucción al pie de la letra — pon el marcador exactamente como te lo piden, solo en su propia línea, sin agregarle nada más.`;
 
+const CYCLE_PROMPTS = {
+  claridad: `
+
+## Programa de 90 días — Ciclo actual: CLARIDAD (días 1-30)
+
+Esta persona está en el primer ciclo de su programa. Aquí el trabajo es hacer consciente su narrativa interior — ayudarla a OBSERVAR sin juzgar lo que se dice a sí misma, sin apurarte a nombrar patrones todavía (eso viene en el ciclo siguiente). Haz preguntas que la inviten a notar cómo se habla a sí misma, qué historia se repite en su cabeza. El objetivo de este ciclo es ver con más nitidez, no resolver nada todavía.`,
+
+  patron: `
+
+## Programa de 90 días — Ciclo actual: PATRÓN (días 31-60)
+
+Esta persona ya pasó por el ciclo de Claridad y ahora está en el de Patrón. Aquí tu trabajo cambia: escuchas activamente su lenguaje dentro de la conversación, buscando frases limitantes repetidas — "no puedo", "no quiero", "necesito", "no tengo", y variantes similares que condicionan su experiencia. Cuando detectes que se repiten (dentro de esta misma conversación o mencionando que le pasa seguido), se lo reflejas directamente, nombrando el patrón lingüístico con claridad — esto puede activar una enjabonada si ya hay evidencia acumulada. La meta de este ciclo es que ella vea el patrón, no solo el evento suelto.`,
+
+  decision: `
+
+## Programa de 90 días — Ciclo actual: DECISIÓN (días 61-90)
+
+Esta persona ya pasó por Claridad y Patrón, y ahora está en el ciclo de Decisión. Aquí el trabajo es distinto: empujas hacia el cambio concreto de lo que no está funcionando, y hacia integrarlo a su rutina diaria hasta que sea parte de su identidad — no una idea bonita, un hábito de verdad. Pregunta por acciones pequeñas y sostenibles, con frecuencia y momento específico ("¿cuándo exactamente vas a hacer esto esta semana?"), y dale seguimiento a compromisos que haya mencionado antes en la conversación.`
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Método no permitido' });
@@ -90,11 +110,14 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { messages } = req.body || {};
+  const { messages, cycle } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) {
     res.status(400).json({ error: 'Falta el arreglo "messages".' });
     return;
   }
+
+  const cycleAddon = (cycle && CYCLE_PROMPTS[cycle]) ? CYCLE_PROMPTS[cycle] : '';
+  const finalSystemPrompt = SYSTEM_PROMPT + cycleAddon;
 
   try {
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
@@ -107,7 +130,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-sonnet-5',
         max_tokens: 1000,
-        system: SYSTEM_PROMPT,
+        system: finalSystemPrompt,
         messages
       })
     });
