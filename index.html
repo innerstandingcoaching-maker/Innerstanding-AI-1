@@ -89,6 +89,13 @@
   }
   .content-mode-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
   .content-mode-btn:disabled{ opacity:0.4; cursor:default; }
+  .program-status{
+    margin-top:10px; z-index:1;
+    font-size:0.75rem; letter-spacing:0.04em;
+    color:var(--gold-dim);
+    border:1px solid var(--gold-dim);
+    padding:5px 14px; border-radius:100px;
+  }
   .copy-btn{
     display:inline-flex; align-items:center; justify-content:center;
     width:26px; height:26px; border-radius:50%;
@@ -464,6 +471,7 @@
     <span>🔊 Voz automática</span>
   </label>
   <button class="content-mode-btn" id="contentModeBtn" style="display:none;">🎬 Modo contenido: sacar carta para publicar</button>
+  <div class="program-status" id="programStatus" style="display:none;"></div>
 </header>
 
 <main id="chat">
@@ -589,6 +597,52 @@ function getMaxCards(){
   return FREE_CARDS_FOR_PUBLIC; // público general
 }
 
+// ---------- Programa de 90 días (Claridad → Patrón → Decisión) ----------
+const PROGRAM_START_KEY = 'innerstanding_program_start';
+
+function saveProgramStart(timestamp){
+  try{
+    // No se pisa una fecha ya guardada — el Día 1 no se reinicia solo.
+    if (!localStorage.getItem(PROGRAM_START_KEY)){
+      localStorage.setItem(PROGRAM_START_KEY, String(timestamp));
+    }
+  }catch(e){}
+}
+
+function getProgramStart(){
+  try{
+    const v = parseInt(localStorage.getItem(PROGRAM_START_KEY) || '0', 10);
+    return v > 0 ? v : null;
+  }catch(e){ return null; }
+}
+
+function getCurrentDay(){
+  const start = getProgramStart();
+  if (!start) return null;
+  const days = Math.floor((Date.now() - start) / (24 * 60 * 60 * 1000)) + 1;
+  return Math.min(Math.max(days, 1), 90);
+}
+
+function getCurrentCycle(){
+  const day = getCurrentDay();
+  if (!day) return null;
+  if (day <= 30) return { key: 'claridad', name: 'Claridad', day };
+  if (day <= 60) return { key: 'patron', name: 'Patrón', day };
+  return { key: 'decision', name: 'Decisión', day };
+}
+
+function updateProgramStatusDisplay(){
+  const el = document.getElementById('programStatus');
+  if (!el) return;
+  const cycle = getCurrentCycle();
+  if (cycle && getMaxCards() === Infinity){
+    el.textContent = `Día ${cycle.day} de 90 · Ciclo: ${cycle.name}`;
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 async function checkAccessOnLoad(){
   const deviceId = getDeviceId();
 
@@ -605,6 +659,7 @@ async function checkAccessOnLoad(){
       const data = await resp.json();
       if (data.active && data.until){
         savePaidAccessCache(data.until);
+        if (data.programStart) saveProgramStart(data.programStart);
       }
     }catch(e){ console.error('No se pudo verificar el pago', e); }
     // Limpiar el session_id de la URL para que no quede pegado
@@ -621,10 +676,18 @@ async function checkAccessOnLoad(){
     const data = await resp.json();
     if (data.active && data.until){
       savePaidAccessCache(data.until);
+      if (data.programStart) saveProgramStart(data.programStart);
     }
   }catch(e){ console.error('No se pudo revisar el acceso', e); }
 
+  // Si eres admin (clave privada), también te arranca tu propio contador de
+  // 90 días, solo local, para que puedas previsualizar cómo se ve cada ciclo.
+  if (isContentUnlocked() && !getProgramStart()){
+    saveProgramStart(Date.now());
+  }
+
   if (cardBtn) updateCardButton();
+  updateProgramStatusDisplay();
 }
 
 async function startCheckout(plan){
@@ -1117,10 +1180,11 @@ function hideTyping(){
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 async function requestClaudeOnce(){
+  const cycle = getCurrentCycle();
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: history })
+    body: JSON.stringify({ messages: history, cycle: cycle ? cycle.key : null })
   });
 
   let data;
