@@ -68,6 +68,12 @@ export default async function handler(req, res) {
       ? subscription.current_period_end * 1000
       : (Date.now() + 31 * 24 * 60 * 60 * 1000);
 
+    // El plan viene de la metadata que guardamos al crear la sesión de pago.
+    // Si por alguna razón no viene ahí, lo buscamos en la metadata de la suscripción.
+    let plan = (session.metadata && session.metadata.plan)
+      || (subscription && subscription.metadata && subscription.metadata.plan)
+      || null;
+
     let programStart = Date.now();
 
     if (deviceId) {
@@ -78,6 +84,7 @@ export default async function handler(req, res) {
         try {
           const existing = JSON.parse(existingRaw);
           if (existing.programStart) programStart = existing.programStart;
+          if (!plan && existing.plan) plan = existing.plan;
         } catch (e) {}
       }
 
@@ -86,11 +93,12 @@ export default async function handler(req, res) {
         customerId: session.customer || null,
         subscriptionId: subscription ? subscription.id : null,
         until: currentPeriodEnd,
-        programStart
+        programStart,
+        plan
       }));
     }
 
-    res.status(200).json({ active: true, until: currentPeriodEnd, programStart });
+    res.status(200).json({ active: true, until: currentPeriodEnd, programStart, plan });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Error interno del servidor.' });
   }

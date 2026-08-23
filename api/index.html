@@ -89,6 +89,13 @@
   }
   .content-mode-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
   .content-mode-btn:disabled{ opacity:0.4; cursor:default; }
+  .program-status{
+    margin-top:10px; z-index:1;
+    font-size:0.75rem; letter-spacing:0.04em;
+    color:var(--gold-dim);
+    border:1px solid var(--gold-dim);
+    padding:5px 14px; border-radius:100px;
+  }
   .copy-btn{
     display:inline-flex; align-items:center; justify-content:center;
     width:26px; height:26px; border-radius:50%;
@@ -255,23 +262,81 @@
   .draw-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
   .draw-btn:disabled{ opacity:0.35; cursor:default; }
 
+  .paywall-card{
+    max-width:86%;
+    margin:8px 0;
+    padding:26px 22px;
+    background:linear-gradient(155deg, var(--ink-2), var(--ink-3));
+    border:1px solid var(--gold-dim);
+    border-radius:20px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,0.35);
+    animation:rise 0.35s ease both;
+  }
+  .paywall-icon{
+    color:var(--gold); font-size:1.6rem; margin-bottom:10px;
+  }
+  .paywall-title{
+    font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    font-size:1.15rem; color:var(--parchment);
+    margin-bottom:6px; line-height:1.35;
+  }
+  .paywall-subtitle{
+    font-size:0.85rem; color:var(--parchment-dim);
+    margin-bottom:20px;
+  }
   .paywall-options{
-    display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;
+    display:flex; gap:10px; flex-wrap:wrap;
   }
   .paywall-btn{
-    flex:1; min-width:130px;
+    flex:1; min-width:120px;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
     font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    font-weight:700; font-size:0.85rem;
-    background:transparent; color:var(--gold);
+    background:transparent; color:var(--parchment);
     border:1px solid var(--gold-dim);
-    padding:12px 14px; border-radius:14px;
+    padding:14px 12px; border-radius:14px;
     cursor:pointer; transition:all 0.2s ease;
   }
-  .paywall-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); }
+  .paywall-btn:hover{ background:rgba(198,161,91,0.1); border-color:var(--gold); transform:translateY(-1px); }
+  .paywall-btn-label{ font-size:0.78rem; letter-spacing:0.03em; opacity:0.85; }
+  .paywall-btn-price{ font-size:1.15rem; font-weight:700; color:var(--gold); }
   .paywall-btn-main{
-    background:var(--gold); color:var(--ink); border-color:var(--gold);
+    background:var(--gold); border-color:var(--gold);
   }
-  .paywall-btn-main:hover{ opacity:0.9; background:var(--gold); }
+  .paywall-btn-main .paywall-btn-label{ color:var(--ink); opacity:0.75; }
+  .paywall-btn-main .paywall-btn-price{ color:var(--ink); }
+  .paywall-btn-main:hover{ opacity:0.92; background:var(--gold); }
+
+  .email-capture-input{
+    width:100%;
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:0.95rem; color:var(--parchment);
+    background:var(--ink); border:1px solid var(--gold-dim);
+    border-radius:12px; padding:12px 14px;
+    margin-bottom:10px; outline:none;
+  }
+  .email-capture-input:focus{ border-color:var(--gold); }
+  .email-capture-input::placeholder{ color:var(--parchment-dim); }
+  .email-capture-submit{
+    width:100%;
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-weight:700; font-size:0.92rem;
+    background:var(--gold); color:var(--ink);
+    border:none; border-radius:12px;
+    padding:13px 12px; cursor:pointer;
+    transition:opacity 0.2s ease;
+  }
+  .email-capture-submit:hover{ opacity:0.9; }
+  .email-capture-error{
+    color:var(--wine-light); font-size:0.8rem; margin-top:8px; display:none;
+  }
+  .email-capture-skip{
+    display:block; margin-top:14px;
+    font-size:0.8rem; color:var(--parchment-dim);
+    text-decoration:underline; background:none; border:none;
+    cursor:pointer; width:100%;
+  }
+
 
   /* ---------- Input bar ---------- */
   .input-bar{
@@ -297,7 +362,31 @@
   .card-btn svg{ width:18px; height:18px; }
   .card-btn:hover{ background:rgba(198,161,91,0.12); border-color:var(--gold); }
   .card-btn:disabled{ opacity:0.3; cursor:default; }
+  .card-btn.pulse-attention{
+    animation:pulseAttention 1.4s ease-in-out infinite;
+  }
+  @keyframes pulseAttention{
+    0%, 100%{ box-shadow:0 0 0 0 rgba(198,161,91,0.55); }
+    50%{ box-shadow:0 0 0 8px rgba(198,161,91,0); }
+  }
   #cardsCounter.limit-note{ color:var(--gold-dim); }
+
+  .card-nudge{
+    max-width:86%;
+    margin:8px 0;
+    padding:14px 18px;
+    background:rgba(198,161,91,0.08);
+    border:1px solid var(--gold-dim);
+    border-radius:16px;
+    color:var(--parchment);
+    font-size:0.9rem; line-height:1.5;
+    text-align:center;
+    animation:rise 0.35s ease both;
+  }
+  .card-nudge .nudge-icon{
+    display:inline-block; color:var(--gold); font-size:1rem;
+  }
+
   textarea{
     flex:1;
     background:transparent; border:none; outline:none;
@@ -412,7 +501,8 @@
     <input type="checkbox" id="autoVoice">
     <span>🔊 Voz automática</span>
   </label>
-  <button class="content-mode-btn" id="contentModeBtn">🎬 Modo contenido: sacar carta para publicar</button>
+  <button class="content-mode-btn" id="contentModeBtn" style="display:none;">🎬 Modo contenido: sacar carta para publicar</button>
+  <div class="program-status" id="programStatus" style="display:none;"></div>
 </header>
 
 <main id="chat">
@@ -477,26 +567,35 @@ function isContentUnlocked(){
   catch(e){ return false; }
 }
 
+// Se desbloquea SOLO entrando con tu link privado (?admin=clave) — nunca con un
+// popup visible al público. Si no está desbloqueada, simplemente no hace nada,
+// sin avisarle a nadie que existe una función oculta.
+function checkAdminUnlockFromUrl(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const adminParam = params.get('admin');
+    if (adminParam && adminParam === CONTENT_PASSPHRASE){
+      localStorage.setItem(CONTENT_UNLOCK_KEY, 'yes');
+      params.delete('admin');
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }catch(e){}
+}
+
 function tryUnlockContent(){
-  if (isContentUnlocked()) return true;
-  const pass = window.prompt('Esta función es privada. Ingresa la clave:');
-  if (pass && pass.trim() === CONTENT_PASSPHRASE){
-    try{ localStorage.setItem(CONTENT_UNLOCK_KEY, 'yes'); }catch(e){}
-    return true;
-  }
-  if (pass !== null){
-    window.alert('Clave incorrecta.');
-  }
-  return false;
+  return isContentUnlocked();
 }
 let history = [];
-let cardsDrawnCount = 0;
+let cardsDrawnCount = getFreeCardsUsed(); // arranca en lo que ya haya usado antes, no en 0
+let freeChatMessagesCount = 0;
+let cardNudgeShown = false;
 let spanishVoice = null;
 
 // ---------- Acceso: admin (tú) vs. público vs. pagado ----------
 const DEVICE_ID_KEY = 'innerstanding_device_id';
 const PAID_ACCESS_KEY = 'innerstanding_paid_until';
-const FREE_CARDS_FOR_PUBLIC = 1;
 
 function getDeviceId(){
   try{
@@ -522,10 +621,94 @@ function savePaidAccessCache(untilTimestamp){
   try{ localStorage.setItem(PAID_ACCESS_KEY, String(untilTimestamp)); }catch(e){}
 }
 
+const PLAN_KEY = 'innerstanding_plan';
+
+function savePlanCache(plan){
+  if (!plan) return;
+  try{ localStorage.setItem(PLAN_KEY, plan); }catch(e){}
+}
+
+function getPlanCache(){
+  try{ return localStorage.getItem(PLAN_KEY); }catch(e){ return null; }
+}
+
+const FREE_CARDS_USED_KEY = 'innerstanding_free_cards_used';
+
+function getFreeCardsUsed(){
+  try{ return parseInt(localStorage.getItem(FREE_CARDS_USED_KEY) || '0', 10); }
+  catch(e){ return 0; }
+}
+
+function incrementFreeCardsUsed(){
+  try{ localStorage.setItem(FREE_CARDS_USED_KEY, String(getFreeCardsUsed() + 1)); }catch(e){}
+}
+
+// ---------- Embudo: 3 cartas → 3 preguntas → email → 3 cartas más → pago ----------
+const EMAIL_CAPTURED_KEY = 'innerstanding_email_captured';
+const FREE_CARDS_STAGE1 = 3; // cartas antes de pedir el email
+const FREE_CARDS_STAGE2 = 6; // cartas totales después de dar el email
+const MIN_QUESTIONS_BEFORE_EMAIL = 3;
+
+function hasEmailCaptured(){
+  try{ return localStorage.getItem(EMAIL_CAPTURED_KEY) === 'yes'; }
+  catch(e){ return false; }
+}
+
+function markEmailCaptured(){
+  try{ localStorage.setItem(EMAIL_CAPTURED_KEY, 'yes'); }catch(e){}
+}
+
 function getMaxCards(){
   if (isContentUnlocked()) return Infinity; // tú, con la clave
   if (hasPaidAccessCached()) return Infinity; // alguien que ya pagó
-  return FREE_CARDS_FOR_PUBLIC; // público general
+  if (hasEmailCaptured()) return FREE_CARDS_STAGE2; // ya dio su email
+  return FREE_CARDS_STAGE1; // público general, primera etapa
+}
+
+// ---------- Programa de 90 días (Claridad → Patrón → Decisión) ----------
+const PROGRAM_START_KEY = 'innerstanding_program_start';
+
+function saveProgramStart(timestamp){
+  try{
+    // No se pisa una fecha ya guardada — el Día 1 no se reinicia solo.
+    if (!localStorage.getItem(PROGRAM_START_KEY)){
+      localStorage.setItem(PROGRAM_START_KEY, String(timestamp));
+    }
+  }catch(e){}
+}
+
+function getProgramStart(){
+  try{
+    const v = parseInt(localStorage.getItem(PROGRAM_START_KEY) || '0', 10);
+    return v > 0 ? v : null;
+  }catch(e){ return null; }
+}
+
+function getCurrentDay(){
+  const start = getProgramStart();
+  if (!start) return null;
+  const days = Math.floor((Date.now() - start) / (24 * 60 * 60 * 1000)) + 1;
+  return Math.min(Math.max(days, 1), 90);
+}
+
+function getCurrentCycle(){
+  const day = getCurrentDay();
+  if (!day) return null;
+  if (day <= 30) return { key: 'claridad', name: 'Claridad', day };
+  if (day <= 60) return { key: 'patron', name: 'Patrón', day };
+  return { key: 'decision', name: 'Decisión', day };
+}
+
+function updateProgramStatusDisplay(){
+  const el = document.getElementById('programStatus');
+  if (!el) return;
+  const cycle = getCurrentCycle();
+  if (cycle && getMaxCards() === Infinity){
+    el.textContent = `Día ${cycle.day} de 90 · Ciclo: ${cycle.name}`;
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 async function checkAccessOnLoad(){
@@ -544,6 +727,8 @@ async function checkAccessOnLoad(){
       const data = await resp.json();
       if (data.active && data.until){
         savePaidAccessCache(data.until);
+        if (data.programStart) saveProgramStart(data.programStart);
+        if (data.plan) savePlanCache(data.plan);
       }
     }catch(e){ console.error('No se pudo verificar el pago', e); }
     // Limpiar el session_id de la URL para que no quede pegado
@@ -560,40 +745,111 @@ async function checkAccessOnLoad(){
     const data = await resp.json();
     if (data.active && data.until){
       savePaidAccessCache(data.until);
+      if (data.programStart) saveProgramStart(data.programStart);
+      if (data.plan) savePlanCache(data.plan);
     }
   }catch(e){ console.error('No se pudo revisar el acceso', e); }
 
+  // Si eres admin (clave privada), también te arranca tu propio contador de
+  // 90 días, solo local, para que puedas previsualizar cómo se ve cada ciclo.
+  if (isContentUnlocked() && !getProgramStart()){
+    saveProgramStart(Date.now());
+  }
+
   if (cardBtn) updateCardButton();
+  updateProgramStatusDisplay();
 }
 
-async function startCheckout(plan){
+const PAYMENT_LINKS = {
+  weekly: 'https://buy.stripe.com/fZuaEX2BA237b1l5nYbwk01',
+  monthly: 'https://buy.stripe.com/6oU5kD5NM4bfglFg2Cbwk00'
+};
+
+function startCheckout(plan){
   const deviceId = getDeviceId();
-  try{
-    const resp = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deviceId, plan })
-    });
-    const data = await resp.json();
-    if (data.url){
-      window.location.href = data.url;
-    } else {
-      window.alert(data.error || 'No se pudo iniciar el pago. Intenta de nuevo.');
-    }
-  }catch(e){
-    window.alert('No se pudo conectar con el pago. Revisa tu conexión.');
+  const link = PAYMENT_LINKS[plan];
+  if (!link){
+    window.alert('No se pudo iniciar el pago. Intenta de nuevo.');
+    return;
   }
+  window.location.href = link + '?client_reference_id=' + encodeURIComponent(deviceId);
+}
+
+function showChatMoreNudge(){
+  const wrap = document.createElement('div');
+  wrap.className = 'card-nudge';
+  wrap.innerHTML = `✨ Antes de tu próxima carta, cuéntame un poco más de lo que traes — hazme un par de preguntas, quiero entender bien lo que estás viviendo.`;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function isValidEmailFormat(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function showEmailCapture(){
+  const wrap = document.createElement('div');
+  wrap.className = 'paywall-card';
+  wrap.innerHTML = `
+    <div class="paywall-icon">✉️</div>
+    <div class="paywall-title">Guarda tu espacio en Innerstanding</div>
+    <div class="paywall-subtitle">Déjame tu email y te doy 3 cartas más para que sigas profundizando.</div>
+    <input type="email" class="email-capture-input" id="emailCaptureInput" placeholder="tu@email.com" autocomplete="email" inputmode="email">
+    <div class="email-capture-error" id="emailCaptureError">Ese email no se ve válido, revísalo.</div>
+    <button class="email-capture-submit" id="emailCaptureSubmit">Quiero mis 3 cartas más</button>
+    <button class="email-capture-skip" id="emailCaptureSkip">Prefiero pasar directo a pagar el acceso completo</button>
+  `;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+
+  const submitBtn = document.getElementById('emailCaptureSubmit');
+  const input = document.getElementById('emailCaptureInput');
+  const errorEl = document.getElementById('emailCaptureError');
+
+  submitBtn.addEventListener('click', async () => {
+    const email = input.value.trim();
+    if (!isValidEmailFormat(email)){
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Guardando...';
+    try{
+      await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: getDeviceId(), email })
+      });
+    }catch(e){ console.error('No se pudo guardar el email', e); }
+    markEmailCaptured();
+    wrap.remove();
+    addMessage('ai', 'Fino, ya quedaste registrada 🌙 Aquí tienes 3 cartas más.');
+    addCardDraw();
+  });
+
+  document.getElementById('emailCaptureSkip').addEventListener('click', () => {
+    wrap.remove();
+    showPaywall();
+  });
 }
 
 function showPaywall(){
   const wrap = document.createElement('div');
-  wrap.className = 'msg ai';
+  wrap.className = 'paywall-card';
   wrap.innerHTML = `
-    <span class="msg-label">Innerstanding</span>
-    <div>Ya usaste tu carta gratis. Si quieres seguir descubriendo qué te dicen las cartas, elige tu acceso:</div>
+    <div class="paywall-icon">✦</div>
+    <div class="paywall-title">Sigue descubriendo lo que hay detrás</div>
+    <div class="paywall-subtitle">Desbloquea lecturas ilimitadas con Innerstanding</div>
     <div class="paywall-options">
-      <button class="paywall-btn" id="payWeeklyBtn">Semanal · €2.22</button>
-      <button class="paywall-btn paywall-btn-main" id="payMonthlyBtn">Mensual · €8.88</button>
+      <button class="paywall-btn" id="payWeeklyBtn">
+        <span class="paywall-btn-label">Semanal</span>
+        <span class="paywall-btn-price">€2.22</span>
+      </button>
+      <button class="paywall-btn paywall-btn-main" id="payMonthlyBtn">
+        <span class="paywall-btn-label">Mensual</span>
+        <span class="paywall-btn-price">€8.88</span>
+      </button>
     </div>
   `;
   chat.appendChild(wrap);
@@ -913,6 +1169,7 @@ async function speak(text, btn){
     await audio.play();
   }catch(err){
     console.error('Voz clonada no disponible, usando voz del navegador:', err);
+    window.alert('Voz clonada falló: ' + (err && err.message ? err.message : err));
     speakBrowserFallback(text, btn);
   }
 }
@@ -1020,6 +1277,9 @@ function addCardDraw(){
     wrap.appendChild(label);
 
     cardsDrawnCount++;
+    if (!isContentUnlocked() && !hasPaidAccessCached()){
+      incrementFreeCardsUsed();
+    }
     updateCardButton();
 
     setTimeout(() => {
@@ -1028,27 +1288,9 @@ function addCardDraw(){
   });
 }
 
-let paywallShown = false;
-
 function updateCardButton(){
-  const max = getMaxCards();
-  const remaining = max - cardsDrawnCount;
-  if (remaining <= 0){
-    cardBtn.disabled = true;
-    cardBtn.setAttribute('aria-label', 'Ya usaste tu carta gratis');
-    if (isFinite(max)){
-      cardsCounter.textContent = 'Ya usaste tu carta gratis para esta sesión.';
-      cardsCounter.classList.add('limit-note');
-      if (!paywallShown){
-        paywallShown = true;
-        showPaywall();
-      }
-    }
-  } else {
-    cardBtn.disabled = false;
-    cardsCounter.textContent = 'Innerstanding es un espacio de introspección, no un sustituto de terapia o coaching profesional.';
-    cardsCounter.classList.remove('limit-note');
-  }
+  cardsCounter.textContent = 'Innerstanding es un espacio de introspección, no un sustituto de terapia o coaching profesional.';
+  cardsCounter.classList.remove('limit-note');
 }
 
 function showTyping(){
@@ -1067,10 +1309,12 @@ function hideTyping(){
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 async function requestClaudeOnce(){
+  const cycle = getCurrentCycle();
+  const plan = getPlanCache();
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: history })
+    body: JSON.stringify({ messages: history, cycle: cycle ? cycle.key : null, plan })
   });
 
   let data;
@@ -1143,9 +1387,9 @@ async function callClaude(userText, forceSpeak, videoCard){
   }
 }
 
-function sendUserTurn(fullText, displayText){
+async function sendUserTurn(fullText, displayText){
   addMessage('user', displayText || fullText);
-  callClaude(fullText);
+  await callClaude(fullText);
 }
 
 function revealRandomCardInline(){
@@ -1201,6 +1445,15 @@ Debe haber exactamente 2 de esas líneas en total (entre carta 1 y carta 2, y en
   callClaude(null, false, cards);
 }
 
+function showCardNudge(){
+  const wrap = document.createElement('div');
+  wrap.className = 'card-nudge';
+  wrap.innerHTML = `✨ Si quieres profundizar más, saca otra carta — toca el ícono <span class="nudge-icon">🎴</span> junto al cuadro de texto, abajo a la izquierda.`;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  if (cardBtn) cardBtn.classList.add('pulse-attention');
+}
+
 function handleSend(){
   const text = input.value.trim();
   if (!text) return;
@@ -1210,9 +1463,19 @@ function handleSend(){
   const sign = detectZodiacSign(text);
   if (sign){
     runZodiacMode(sign, text);
-  } else {
-    sendUserTurn(text);
+    return;
   }
+
+  const isPublicTier = isFinite(getMaxCards());
+  const shouldCount = isPublicTier && cardsDrawnCount >= 1;
+  if (shouldCount) freeChatMessagesCount++;
+
+  sendUserTurn(text).then(() => {
+    if (shouldCount && freeChatMessagesCount >= 3 && !cardNudgeShown){
+      cardNudgeShown = true;
+      showCardNudge();
+    }
+  });
 }
 
 function init(){
@@ -1226,9 +1489,30 @@ function init(){
     contentModeBtn = document.getElementById('contentModeBtn');
     chat.innerHTML = '';
 
+    checkAdminUnlockFromUrl();
+    if (isContentUnlocked()){
+      contentModeBtn.style.display = '';
+    }
+
     sendBtn.addEventListener('click', handleSend);
     cardBtn.addEventListener('click', () => {
-      if (cardsDrawnCount >= getMaxCards()) return;
+      cardBtn.classList.remove('pulse-attention');
+      if (cardsDrawnCount >= getMaxCards()){
+        if (hasPaidAccessCached() || isContentUnlocked()){
+          addCardDraw();
+          return;
+        }
+        if (!hasEmailCaptured()){
+          if (freeChatMessagesCount < MIN_QUESTIONS_BEFORE_EMAIL){
+            showChatMoreNudge();
+            return;
+          }
+          showEmailCapture();
+          return;
+        }
+        showPaywall();
+        return;
+      }
       addCardDraw();
     });
     contentModeBtn.addEventListener('click', runContentMode);
@@ -1243,8 +1527,16 @@ function init(){
       input.style.height = Math.min(input.scrollHeight, 120) + 'px';
     });
 
-    addMessage('ai', "Bienvenida a tu espacio. Antes de sacar la carta, hazte una pregunta o pon una intención en tu mente — puede ser sobre lo que sea que estés atravesando ahorita. Si quieres, cuéntamela para profundizar juntas. Si no, solo saca la carta cuando estés lista.");
-    addCardDraw();
+    if (getMaxCards() > cardsDrawnCount){
+      addMessage('ai', "Bienvenida a tu espacio. Antes de sacar la carta, hazte una pregunta o pon una intención en tu mente — puede ser sobre lo que sea que estés atravesando ahorita. Si quieres, cuéntamela para profundizar juntas. Si no, solo saca la carta cuando estés lista.");
+      addCardDraw();
+    } else if (!hasEmailCaptured() && !hasPaidAccessCached() && !isContentUnlocked()){
+      addMessage('ai', "Bienvenida de vuelta. Ya sacaste tus primeras cartas gratis — déjame tu email y te doy 3 más para seguir profundizando.");
+      showEmailCapture();
+    } else {
+      addMessage('ai', "Bienvenida de vuelta. Ya usaste tu lectura gratuita — si quieres seguir descubriendo qué te dicen las cartas, aquí tienes tu acceso:");
+      showPaywall();
+    }
     checkAccessOnLoad();
   }catch(err){
     document.body.innerHTML = '<div style="padding:40px 24px; color:#ece5d8; font-family:sans-serif; text-align:center;">Algo no cargó bien. Intenta abrir este archivo en Chrome o Safari en vez del visor de archivos.<br><br><span style="opacity:0.5; font-size:0.75rem;">' + (err && err.message ? err.message : '') + '</span></div>';

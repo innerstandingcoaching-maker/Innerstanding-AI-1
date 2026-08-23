@@ -74,6 +74,10 @@ export default async function handler(req, res) {
     params.append('line_items[0][price]', priceId);
     params.append('line_items[0][quantity]', '1');
     params.append('client_reference_id', deviceId);
+    // Guardamos el plan como metadata para poder recuperarlo después
+    // en verify-session.js y saber si esta persona es semanal o mensual.
+    params.append('metadata[plan]', plan);
+    params.append('subscription_data[metadata][plan]', plan);
     params.append('success_url', origin + '/?session_id={CHECKOUT_SESSION_ID}');
     params.append('cancel_url', origin + '/');
 

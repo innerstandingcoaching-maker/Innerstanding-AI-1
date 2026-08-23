@@ -35,7 +35,12 @@ export default async function handler(req, res) {
 
     const record = JSON.parse(data.result);
     const stillActive = !!(record.active && record.until && record.until > Date.now());
-    res.status(200).json({ active: stillActive, until: record.until || null, programStart: record.programStart || null });
+    res.status(200).json({
+      active: stillActive,
+      until: record.until || null,
+      programStart: record.programStart || null,
+      plan: record.plan || null
+    });
   } catch (err) {
     res.status(200).json({ active: false });
   }
