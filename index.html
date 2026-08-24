@@ -658,11 +658,10 @@ function incrementFreeCardsUsed(){
   try{ localStorage.setItem(FREE_CARDS_USED_KEY, String(getFreeCardsUsed() + 1)); }catch(e){}
 }
 
-// ---------- Embudo: 3 cartas → 3 preguntas → email → 3 cartas más → pago ----------
+// ---------- Embudo: email al inicio → 3 cartas o 5 preguntas (lo primero) → pago ----------
 const EMAIL_CAPTURED_KEY = 'innerstanding_email_captured';
-const FREE_CARDS_STAGE1 = 3; // cartas antes de pedir el email
-const FREE_CARDS_STAGE2 = 6; // cartas totales después de dar el email
-const MIN_QUESTIONS_BEFORE_EMAIL = 3;
+const FREE_CARDS_LIMIT = 3;
+const FREE_MESSAGES_LIMIT = 5;
 
 function hasEmailCaptured(){
   try{ return localStorage.getItem(EMAIL_CAPTURED_KEY) === 'yes'; }
@@ -676,8 +675,7 @@ function markEmailCaptured(){
 function getMaxCards(){
   if (isContentUnlocked()) return Infinity; // tú, con la clave
   if (hasPaidAccessCached()) return Infinity; // alguien que ya pagó
-  if (hasEmailCaptured()) return FREE_CARDS_STAGE2; // ya dio su email
-  return FREE_CARDS_STAGE1; // público general, primera etapa
+  return FREE_CARDS_LIMIT;
 }
 
 // ---------- Programa de 90 días (Claridad → Patrón → Decisión) ----------
@@ -798,14 +796,6 @@ function startCheckout(plan){
   window.location.href = link + '?client_reference_id=' + encodeURIComponent(deviceId);
 }
 
-function showChatMoreNudge(){
-  const wrap = document.createElement('div');
-  wrap.className = 'card-nudge';
-  wrap.innerHTML = `✨ Antes de tu próxima carta, cuéntame un poco más de lo que traes — hazme un par de preguntas, quiero entender bien lo que estás viviendo.`;
-  chat.appendChild(wrap);
-  chat.scrollTop = chat.scrollHeight;
-}
-
 function isValidEmailFormat(email){
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -816,11 +806,11 @@ function showEmailCapture(){
   wrap.innerHTML = `
     <div class="paywall-icon">✉️</div>
     <div class="paywall-title">Guarda tu espacio en Innerstanding</div>
-    <div class="paywall-subtitle">Déjame tu email y te doy 3 cartas más para que sigas profundizando.</div>
+    <div class="paywall-subtitle">Déjame tu email antes de empezar — así no pierdes tu progreso si vuelves después.</div>
     <input type="email" class="email-capture-input" id="emailCaptureInput" placeholder="tu@email.com" autocomplete="email" inputmode="email">
     <div class="email-capture-error" id="emailCaptureError">Ese email no se ve válido, revísalo.</div>
-    <button class="email-capture-submit" id="emailCaptureSubmit">Quiero mis 3 cartas más</button>
-    <button class="email-capture-skip" id="emailCaptureSkip">Prefiero pasar directo a pagar el acceso completo</button>
+    <button class="email-capture-submit" id="emailCaptureSubmit">Empezar mi lectura gratis</button>
+    <button class="email-capture-skip" id="emailCaptureSkip">Prefiero pagar directo, sin probar gratis</button>
   `;
   chat.appendChild(wrap);
   chat.scrollTop = chat.scrollHeight;
@@ -847,7 +837,7 @@ function showEmailCapture(){
     }catch(e){ console.error('No se pudo guardar el email', e); }
     markEmailCaptured();
     wrap.remove();
-    addMessage('ai', 'Fino, ya quedaste registrada 🌙 Aquí tienes 3 cartas más.');
+    addMessage('ai', "Bienvenida a tu espacio. Antes de sacar la carta, hazte una pregunta o pon una intención en tu mente — puede ser sobre lo que sea que estés atravesando ahorita. Si quieres, cuéntamela para profundizar juntas. Si no, solo saca la carta cuando estés lista.");
     addCardDraw();
   });
 
@@ -1543,6 +1533,17 @@ function showCardNudge(){
 function handleSend(){
   const text = input.value.trim();
   if (!text) return;
+
+  const isPublicTier = isFinite(getMaxCards());
+  const shouldCount = isPublicTier && cardsDrawnCount >= 1;
+
+  // Si ya llegó a su límite de preguntas gratis, no dejamos mandar más —
+  // le mostramos el paywall directo en vez de la respuesta de la coach.
+  if (shouldCount && freeChatMessagesCount >= FREE_MESSAGES_LIMIT){
+    showPaywall();
+    return;
+  }
+
   input.value = '';
   input.style.height = 'auto';
 
@@ -1552,12 +1553,12 @@ function handleSend(){
     return;
   }
 
-  const isPublicTier = isFinite(getMaxCards());
-  const shouldCount = isPublicTier && cardsDrawnCount >= 1;
   if (shouldCount) freeChatMessagesCount++;
 
   sendUserTurn(text).then(() => {
-    if (shouldCount && freeChatMessagesCount >= 3 && !cardNudgeShown){
+    if (shouldCount && freeChatMessagesCount >= FREE_MESSAGES_LIMIT){
+      showPaywall();
+    } else if (shouldCount && freeChatMessagesCount >= 3 && !cardNudgeShown){
       cardNudgeShown = true;
       showCardNudge();
     }
@@ -1584,18 +1585,6 @@ function init(){
     cardBtn.addEventListener('click', () => {
       cardBtn.classList.remove('pulse-attention');
       if (cardsDrawnCount >= getMaxCards()){
-        if (hasPaidAccessCached() || isContentUnlocked()){
-          addCardDraw();
-          return;
-        }
-        if (!hasEmailCaptured()){
-          if (freeChatMessagesCount < MIN_QUESTIONS_BEFORE_EMAIL){
-            showChatMoreNudge();
-            return;
-          }
-          showEmailCapture();
-          return;
-        }
         showPaywall();
         return;
       }
@@ -1644,12 +1633,16 @@ function init(){
       input.style.height = Math.min(input.scrollHeight, 120) + 'px';
     });
 
-    if (getMaxCards() > cardsDrawnCount){
+    if (isContentUnlocked() || hasPaidAccessCached()){
       addMessage('ai', "Bienvenida a tu espacio. Antes de sacar la carta, hazte una pregunta o pon una intención en tu mente — puede ser sobre lo que sea que estés atravesando ahorita. Si quieres, cuéntamela para profundizar juntas. Si no, solo saca la carta cuando estés lista.");
       addCardDraw();
-    } else if (!hasEmailCaptured() && !hasPaidAccessCached() && !isContentUnlocked()){
-      addMessage('ai', "Bienvenida de vuelta. Ya sacaste tus primeras cartas gratis — déjame tu email y te doy 3 más para seguir profundizando.");
+    } else if (!hasEmailCaptured()){
+      // Visitante nuevo: primero el email, luego arranca la lectura gratis.
+      addMessage('ai', "Bienvenida a Innerstanding 🌙 Antes de arrancar, déjame tu email para guardar tu espacio.");
       showEmailCapture();
+    } else if (cardsDrawnCount < getMaxCards()){
+      addMessage('ai', "Bienvenida a tu espacio. Antes de sacar la carta, hazte una pregunta o pon una intención en tu mente — puede ser sobre lo que sea que estés atravesando ahorita. Si quieres, cuéntamela para profundizar juntas. Si no, solo saca la carta cuando estés lista.");
+      addCardDraw();
     } else {
       addMessage('ai', "Bienvenida de vuelta. Ya usaste tu lectura gratuita — si quieres seguir descubriendo qué te dicen las cartas, aquí tienes tu acceso:");
       showPaywall();
