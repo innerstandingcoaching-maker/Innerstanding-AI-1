@@ -96,6 +96,13 @@
     border:1px solid var(--gold-dim);
     padding:5px 14px; border-radius:100px;
   }
+  .manage-sub-link{
+    display:none;
+    margin-top:8px; z-index:1;
+    font-size:0.75rem;
+    color:var(--parchment-dim);
+    text-decoration:underline;
+  }
   .copy-btn{
     display:inline-flex; align-items:center; justify-content:center;
     width:26px; height:26px; border-radius:50%;
@@ -307,6 +314,37 @@
   .paywall-btn-main .paywall-btn-price{ color:var(--ink); }
   .paywall-btn-main:hover{ opacity:0.92; background:var(--gold); }
 
+  .email-capture-input{
+    width:100%;
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:0.95rem; color:var(--parchment);
+    background:var(--ink); border:1px solid var(--gold-dim);
+    border-radius:12px; padding:12px 14px;
+    margin-bottom:10px; outline:none;
+  }
+  .email-capture-input:focus{ border-color:var(--gold); }
+  .email-capture-input::placeholder{ color:var(--parchment-dim); }
+  .email-capture-submit{
+    width:100%;
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-weight:700; font-size:0.92rem;
+    background:var(--gold); color:var(--ink);
+    border:none; border-radius:12px;
+    padding:13px 12px; cursor:pointer;
+    transition:opacity 0.2s ease;
+  }
+  .email-capture-submit:hover{ opacity:0.9; }
+  .email-capture-error{
+    color:var(--wine-light); font-size:0.8rem; margin-top:8px; display:none;
+  }
+  .email-capture-skip{
+    display:block; margin-top:14px;
+    font-size:0.8rem; color:var(--parchment-dim);
+    text-decoration:underline; background:none; border:none;
+    cursor:pointer; width:100%;
+  }
+
+
   /* ---------- Input bar ---------- */
   .input-bar{
     position:fixed; bottom:0; left:0; right:0;
@@ -379,6 +417,11 @@
     text-align:center; font-size:0.68rem; color:var(--parchment-dim);
     max-width:640px; margin:2px auto 0; padding:0 20px;
   }
+  .legal-footer{
+    text-align:center; font-size:0.68rem; color:var(--parchment-dim);
+    margin:6px auto 0; padding:0 20px;
+  }
+  .legal-footer a{ color:var(--parchment-dim); text-decoration:underline; }
 
   ::-webkit-scrollbar{ width:6px; }
   ::-webkit-scrollbar-thumb{ background:var(--gold-dim); border-radius:10px; }
@@ -472,6 +515,8 @@
   </label>
   <button class="content-mode-btn" id="contentModeBtn" style="display:none;">🎬 Modo contenido: sacar carta para publicar</button>
   <div class="program-status" id="programStatus" style="display:none;"></div>
+  <a href="#" class="manage-sub-link" id="manageSubLink" style="display:none;">Gestionar mi suscripción</a>
+  <a href="#" class="manage-sub-link" id="restoreAccessLink" style="display:none;">¿Ya pagaste? Restaurar mi acceso</a>
 </header>
 
 <main id="chat">
@@ -493,6 +538,7 @@
     </button>
   </div>
   <p class="disclaimer" id="cardsCounter">Innerstanding es un espacio de introspección, no un sustituto de terapia o coaching profesional.</p>
+  <p class="legal-footer"><a href="/privacy.html">Privacidad</a> · <a href="/terms.html">Términos</a></p>
 </div>
 
 <script>
@@ -557,7 +603,7 @@ function tryUnlockContent(){
   return isContentUnlocked();
 }
 let history = [];
-let cardsDrawnCount = 0;
+let cardsDrawnCount = getFreeCardsUsed(); // arranca en lo que ya haya usado antes, no en 0
 let freeChatMessagesCount = 0;
 let cardNudgeShown = false;
 let spanishVoice = null;
@@ -565,7 +611,6 @@ let spanishVoice = null;
 // ---------- Acceso: admin (tú) vs. público vs. pagado ----------
 const DEVICE_ID_KEY = 'innerstanding_device_id';
 const PAID_ACCESS_KEY = 'innerstanding_paid_until';
-const FREE_CARDS_FOR_PUBLIC = 1;
 
 function getDeviceId(){
   try{
@@ -591,22 +636,48 @@ function savePaidAccessCache(untilTimestamp){
   try{ localStorage.setItem(PAID_ACCESS_KEY, String(untilTimestamp)); }catch(e){}
 }
 
-const FREE_CARD_USED_KEY = 'innerstanding_free_card_used';
+const PLAN_KEY = 'innerstanding_plan';
 
-function hasUsedFreeCard(){
-  try{ return localStorage.getItem(FREE_CARD_USED_KEY) === 'yes'; }
+function savePlanCache(plan){
+  if (!plan) return;
+  try{ localStorage.setItem(PLAN_KEY, plan); }catch(e){}
+}
+
+function getPlanCache(){
+  try{ return localStorage.getItem(PLAN_KEY); }catch(e){ return null; }
+}
+
+const FREE_CARDS_USED_KEY = 'innerstanding_free_cards_used';
+
+function getFreeCardsUsed(){
+  try{ return parseInt(localStorage.getItem(FREE_CARDS_USED_KEY) || '0', 10); }
+  catch(e){ return 0; }
+}
+
+function incrementFreeCardsUsed(){
+  try{ localStorage.setItem(FREE_CARDS_USED_KEY, String(getFreeCardsUsed() + 1)); }catch(e){}
+}
+
+// ---------- Embudo: 3 cartas → 3 preguntas → email → 3 cartas más → pago ----------
+const EMAIL_CAPTURED_KEY = 'innerstanding_email_captured';
+const FREE_CARDS_STAGE1 = 3; // cartas antes de pedir el email
+const FREE_CARDS_STAGE2 = 6; // cartas totales después de dar el email
+const MIN_QUESTIONS_BEFORE_EMAIL = 3;
+
+function hasEmailCaptured(){
+  try{ return localStorage.getItem(EMAIL_CAPTURED_KEY) === 'yes'; }
   catch(e){ return false; }
 }
 
-function markFreeCardUsed(){
-  try{ localStorage.setItem(FREE_CARD_USED_KEY, 'yes'); }catch(e){}
+function markEmailCaptured(){
+  try{ localStorage.setItem(EMAIL_CAPTURED_KEY, 'yes'); }catch(e){}
 }
 
 function getMaxCards(){
   if (isContentUnlocked()) return Infinity; // tú, con la clave
   if (hasPaidAccessCached()) return Infinity; // alguien que ya pagó
-  if (hasUsedFreeCard()) return 0; // público que ya gastó su carta gratis, en cualquier sesión anterior
-  return FREE_CARDS_FOR_PUBLIC; // público general, primera vez
+  if (hasEmailCaptured()) return FREE_CARDS_STAGE2; // ya dio su email
+  return FREE_CARDS_STAGE1; // público general, primera etapa
 }
 
 // ---------- Programa de 90 días (Claridad → Patrón → Decisión) ----------
@@ -645,6 +716,14 @@ function getCurrentCycle(){
 
 function updateProgramStatusDisplay(){
   const el = document.getElementById('programStatus');
+  const manageLink = document.getElementById('manageSubLink');
+  const restoreLink = document.getElementById('restoreAccessLink');
+  if (manageLink){
+    manageLink.style.display = hasPaidAccessCached() ? '' : 'none';
+  }
+  if (restoreLink){
+    restoreLink.style.display = (!hasPaidAccessCached() && !isContentUnlocked()) ? '' : 'none';
+  }
   if (!el) return;
   const cycle = getCurrentCycle();
   if (cycle && getMaxCards() === Infinity){
@@ -672,6 +751,7 @@ async function checkAccessOnLoad(){
       if (data.active && data.until){
         savePaidAccessCache(data.until);
         if (data.programStart) saveProgramStart(data.programStart);
+        if (data.plan) savePlanCache(data.plan);
       }
     }catch(e){ console.error('No se pudo verificar el pago', e); }
     // Limpiar el session_id de la URL para que no quede pegado
@@ -689,6 +769,7 @@ async function checkAccessOnLoad(){
     if (data.active && data.until){
       savePaidAccessCache(data.until);
       if (data.programStart) saveProgramStart(data.programStart);
+      if (data.plan) savePlanCache(data.plan);
     }
   }catch(e){ console.error('No se pudo revisar el acceso', e); }
 
@@ -717,6 +798,123 @@ function startCheckout(plan){
   window.location.href = link + '?client_reference_id=' + encodeURIComponent(deviceId);
 }
 
+function showChatMoreNudge(){
+  const wrap = document.createElement('div');
+  wrap.className = 'card-nudge';
+  wrap.innerHTML = `✨ Antes de tu próxima carta, cuéntame un poco más de lo que traes — hazme un par de preguntas, quiero entender bien lo que estás viviendo.`;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function isValidEmailFormat(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function showEmailCapture(){
+  const wrap = document.createElement('div');
+  wrap.className = 'paywall-card';
+  wrap.innerHTML = `
+    <div class="paywall-icon">✉️</div>
+    <div class="paywall-title">Guarda tu espacio en Innerstanding</div>
+    <div class="paywall-subtitle">Déjame tu email y te doy 3 cartas más para que sigas profundizando.</div>
+    <input type="email" class="email-capture-input" id="emailCaptureInput" placeholder="tu@email.com" autocomplete="email" inputmode="email">
+    <div class="email-capture-error" id="emailCaptureError">Ese email no se ve válido, revísalo.</div>
+    <button class="email-capture-submit" id="emailCaptureSubmit">Quiero mis 3 cartas más</button>
+    <button class="email-capture-skip" id="emailCaptureSkip">Prefiero pasar directo a pagar el acceso completo</button>
+  `;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+
+  const submitBtn = document.getElementById('emailCaptureSubmit');
+  const input = document.getElementById('emailCaptureInput');
+  const errorEl = document.getElementById('emailCaptureError');
+
+  submitBtn.addEventListener('click', async () => {
+    const email = input.value.trim();
+    if (!isValidEmailFormat(email)){
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Guardando...';
+    try{
+      await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: getDeviceId(), email })
+      });
+    }catch(e){ console.error('No se pudo guardar el email', e); }
+    markEmailCaptured();
+    wrap.remove();
+    addMessage('ai', 'Fino, ya quedaste registrada 🌙 Aquí tienes 3 cartas más.');
+    addCardDraw();
+  });
+
+  document.getElementById('emailCaptureSkip').addEventListener('click', () => {
+    wrap.remove();
+    showPaywall();
+  });
+}
+
+function showRestoreAccess(){
+  const wrap = document.createElement('div');
+  wrap.className = 'paywall-card';
+  wrap.innerHTML = `
+    <div class="paywall-icon">🔑</div>
+    <div class="paywall-title">Restaura tu acceso</div>
+    <div class="paywall-subtitle">Escribe el email con el que pagaste y te devolvemos tu acceso aquí.</div>
+    <input type="email" class="email-capture-input" id="restoreEmailInput" placeholder="tu@email.com" autocomplete="email" inputmode="email">
+    <div class="email-capture-error" id="restoreEmailError">No pudimos verificar ese email. Revísalo o escríbenos.</div>
+    <button class="email-capture-submit" id="restoreEmailSubmit">Restaurar mi acceso</button>
+  `;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+
+  const submitBtn = document.getElementById('restoreEmailSubmit');
+  const input = document.getElementById('restoreEmailInput');
+  const errorEl = document.getElementById('restoreEmailError');
+
+  submitBtn.addEventListener('click', async () => {
+    const email = input.value.trim();
+    if (!isValidEmailFormat(email)){
+      errorEl.textContent = 'Ese email no se ve válido, revísalo.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Buscando tu acceso...';
+    try{
+      const resp = await fetch('/api/restore-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: getDeviceId(), email })
+      });
+      const data = await resp.json();
+      if (data.active && data.until){
+        savePaidAccessCache(data.until);
+        if (data.programStart) saveProgramStart(data.programStart);
+        if (data.plan) savePlanCache(data.plan);
+        wrap.remove();
+        updateProgramStatusDisplay();
+        addMessage('ai', 'Listo, ya te reconocí 🌙 Tu acceso quedó restaurado en este dispositivo.');
+        addCardDraw();
+      } else {
+        errorEl.textContent = data.error || 'No encontramos una suscripción activa con ese email.';
+        errorEl.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Restaurar mi acceso';
+      }
+    }catch(e){
+      errorEl.textContent = 'Algo falló revisando tu acceso. Intenta de nuevo.';
+      errorEl.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Restaurar mi acceso';
+    }
+  });
+}
+
 function showPaywall(){
   const wrap = document.createElement('div');
   wrap.className = 'paywall-card';
@@ -734,11 +932,16 @@ function showPaywall(){
         <span class="paywall-btn-price">€8.88</span>
       </button>
     </div>
+    <button class="email-capture-skip" id="restoreFromPaywallBtn">¿Ya pagaste antes? Restaurar mi acceso</button>
   `;
   chat.appendChild(wrap);
   chat.scrollTop = chat.scrollHeight;
   document.getElementById('payWeeklyBtn').addEventListener('click', () => startCheckout('weekly'));
   document.getElementById('payMonthlyBtn').addEventListener('click', () => startCheckout('monthly'));
+  document.getElementById('restoreFromPaywallBtn').addEventListener('click', () => {
+    wrap.remove();
+    showRestoreAccess();
+  });
 }
 
 function pickSpanishVoice(){
@@ -1161,7 +1364,7 @@ function addCardDraw(){
 
     cardsDrawnCount++;
     if (!isContentUnlocked() && !hasPaidAccessCached()){
-      markFreeCardUsed();
+      incrementFreeCardsUsed();
     }
     updateCardButton();
 
@@ -1193,10 +1396,11 @@ function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 async function requestClaudeOnce(){
   const cycle = getCurrentCycle();
+  const plan = getPlanCache();
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: history, cycle: cycle ? cycle.key : null })
+    body: JSON.stringify({ messages: history, cycle: cycle ? cycle.key : null, plan })
   });
 
   let data;
@@ -1380,12 +1584,55 @@ function init(){
     cardBtn.addEventListener('click', () => {
       cardBtn.classList.remove('pulse-attention');
       if (cardsDrawnCount >= getMaxCards()){
+        if (hasPaidAccessCached() || isContentUnlocked()){
+          addCardDraw();
+          return;
+        }
+        if (!hasEmailCaptured()){
+          if (freeChatMessagesCount < MIN_QUESTIONS_BEFORE_EMAIL){
+            showChatMoreNudge();
+            return;
+          }
+          showEmailCapture();
+          return;
+        }
         showPaywall();
         return;
       }
       addCardDraw();
     });
     contentModeBtn.addEventListener('click', runContentMode);
+    const restoreAccessLink = document.getElementById('restoreAccessLink');
+    if (restoreAccessLink){
+      restoreAccessLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showRestoreAccess();
+      });
+    }
+    const manageSubLink = document.getElementById('manageSubLink');
+    if (manageSubLink){
+      manageSubLink.addEventListener('click', async (e) => {
+        e.preventDefault();
+        manageSubLink.textContent = 'Abriendo tu portal...';
+        try{
+          const resp = await fetch('/api/create-portal-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceId: getDeviceId() })
+          });
+          const data = await resp.json();
+          if (data.url){
+            window.location.href = data.url;
+          } else {
+            window.alert(data.error || 'No se pudo abrir el portal de suscripción.');
+            manageSubLink.textContent = 'Gestionar mi suscripción';
+          }
+        }catch(err){
+          window.alert('No se pudo abrir el portal de suscripción.');
+          manageSubLink.textContent = 'Gestionar mi suscripción';
+        }
+      });
+    }
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();
@@ -1400,6 +1647,9 @@ function init(){
     if (getMaxCards() > cardsDrawnCount){
       addMessage('ai', "Bienvenida a tu espacio. Antes de sacar la carta, hazte una pregunta o pon una intención en tu mente — puede ser sobre lo que sea que estés atravesando ahorita. Si quieres, cuéntamela para profundizar juntas. Si no, solo saca la carta cuando estés lista.");
       addCardDraw();
+    } else if (!hasEmailCaptured() && !hasPaidAccessCached() && !isContentUnlocked()){
+      addMessage('ai', "Bienvenida de vuelta. Ya sacaste tus primeras cartas gratis — déjame tu email y te doy 3 más para seguir profundizando.");
+      showEmailCapture();
     } else {
       addMessage('ai', "Bienvenida de vuelta. Ya usaste tu lectura gratuita — si quieres seguir descubriendo qué te dicen las cartas, aquí tienes tu acceso:");
       showPaywall();
