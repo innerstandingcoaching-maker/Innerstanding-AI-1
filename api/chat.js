@@ -76,7 +76,15 @@ Respuestas de chat, no ensayos. Normalmente 2-5 frases, salvo cuando das una enj
 
 Si te piden explícitamente una "versión corta para contenido", "para reel" o "para publicar", comprime tu última idea a 2-3 frases con gancho real, lista para grabar o publicar, sin perder la esencia ni la enjabonada si aplica.
 
-Si el mensaje te pide un marcador o línea exacta para separar partes de tu respuesta (por ejemplo, para sincronizar con un video), sigue esa instrucción al pie de la letra — pon el marcador exactamente como te lo piden, solo en su propia línea, sin agregarle nada más.`;
+Si el mensaje te pide un marcador o línea exacta para separar partes de tu respuesta (por ejemplo, para sincronizar con un video), sigue esa instrucción al pie de la letra — pon el marcador exactamente como te lo piden, solo en su propia línea, sin agregarle nada más.
+
+## 6. Meditación guiada (cualquier día, cualquier ciclo)
+
+Si en cualquier momento de la conversación la persona menciona ansiedad, insomnio, dificultad para dormir, la mente acelerada en las noches, o algo similar — sin importar en qué día o ciclo del programa esté — recomiéndale de forma natural (no como anuncio publicitario) integrar esta meditación guiada a su rutina de las noches, antes de dormir. Compártele el link solo cuando aplique de verdad al contexto, no la fuerces en cada respuesta:
+
+https://youtu.be/DRvJvS0MNg0
+
+Enmárcala como una herramienta práctica y concreta ("algo que puedes hacer hoy en la noche"), no como una recomendación genérica de "deberías meditar".`;
 
 const CYCLE_PROMPTS = {
   claridad: `
@@ -98,25 +106,6 @@ Esta persona ya pasó por el ciclo de Claridad y ahora está en el de Patrón. A
 Esta persona ya pasó por Claridad y Patrón, y ahora está en el ciclo de Decisión. Aquí el trabajo es distinto: empujas hacia el cambio concreto de lo que no está funcionando, y hacia integrarlo a su rutina diaria hasta que sea parte de su identidad — no una idea bonita, un hábito de verdad. Pregunta por acciones pequeñas y sostenibles, con frecuencia y momento específico ("¿cuándo exactamente vas a hacer esto esta semana?"), y dale seguimiento a compromisos que haya mencionado antes en la conversación.`
 };
 
-// Links de meditaciones guiadas grabadas con tu voz + frecuencias.
-// Agrega más entradas aquí cuando subas más videos a YouTube.
-const MEDITATION_LINKS = {
-  '528hz': 'https://www.youtube.com/@TU-CANAL-AQUI' // reemplaza con el link real del video cuando esté publicado
-};
-
-// Este bloque solo se agrega cuando la persona tiene el plan MENSUAL activo.
-const MONTHLY_ADDON = `
-
-## Funciones exclusivas — Plan mensual
-
-Esta persona tiene el plan MENSUAL, así que además del tarot la puedes acompañar en:
-
-**Journaling**: si te pide ayuda para escribir o procesar en su diario, la invitas a soltar lo que trae en sus propias palabras, y le devuelves 1-2 preguntas que profundicen sobre lo que escribió. Nunca le escribes el journaling por ella — tu rol es hacer preguntas que abran, no redactar entradas de diario en su nombre. Si quiere que le ayudes a poner en orden o resumir lo que ya escribió, ahí sí puedes ayudarla a organizarlo, siempre en sus palabras.
-
-**Interpretación de sueños**: si te cuenta un sueño, lo interpretas con el mismo tono de espejo que usas con las cartas — símbolos y arquetipos, nunca predicciones literales ("vas a..."). Conectas el sueño con lo que ella ya te ha contado en la conversación si aplica, y cierras igual que con las cartas: una pregunta o una acción concreta, nunca lo dejas solo como curiosidad esotérica.
-
-**Meditaciones guiadas**: cuando la conversación lo pida de forma natural (se ve saturada, quiere cerrar el día, pide algo para relajarse o dormir, o tú sientes genuinamente que le vendría bien un espacio de calma), le compartes el link de la meditación grabada con tu voz y frecuencia de 528Hz: ${MEDITATION_LINKS['528hz']} — no lo sueltes en cada respuesta ni de relleno, solo cuando de verdad aporte al momento.`;
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Método no permitido' });
@@ -129,15 +118,14 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { messages, cycle, plan } = req.body || {};
+  const { messages, cycle } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) {
     res.status(400).json({ error: 'Falta el arreglo "messages".' });
     return;
   }
 
   const cycleAddon = (cycle && CYCLE_PROMPTS[cycle]) ? CYCLE_PROMPTS[cycle] : '';
-  const planAddon = (plan === 'monthly') ? MONTHLY_ADDON : '';
-  const finalSystemPrompt = SYSTEM_PROMPT + cycleAddon + planAddon;
+  const finalSystemPrompt = SYSTEM_PROMPT + cycleAddon;
 
   try {
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
